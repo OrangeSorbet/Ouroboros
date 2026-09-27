@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "officecli-morph-ppt": {
+      "version": "1.0.0",
+      "installedAt": "2026-09-27T10:51:25.541Z",
+      "platform": "claude-code",
+      "contentHash": "5316f51719d00c31fc369e48e4ba07e22e976d4f53aea612f32d09ad424297ee"
+    },
+    "officecli-morph-ppt-3d": {
+      "version": "1.0.0",
+      "installedAt": "2026-09-27T10:52:14.854Z",
+      "platform": "claude-code",
+      "contentHash": "77c1e37421fec44a5530cc3dee4e650cf635f6fe4dfdbc68550454024b51855c"
+    }
+  }
+}
