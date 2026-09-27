@@ -1,0 +1,8 @@
+let x = 5;
+let y = x + 3;
+if (y >= 5) {
+  print y;
+} else {
+  print 0;
+}
+# trailing comment

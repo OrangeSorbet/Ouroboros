@@ -1,0 +1,434 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1790412230923,
+  "projectRoot": "C:\\Users\\ashvi\\Documents\\VS_Codes\\HTML\\Snek",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "preact",
+        "version": "10.29.8",
+        "category": "frontend"
+      },
+      {
+        "name": "vite",
+        "version": "8.3.0",
+        "category": "build"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "vite",
+      "build": "tsc -b && vite build",
+      "preview": "vite preview"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": "type-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "public",
+      "src"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 1,
+      "lastAccessed": 1790412230852,
+      "keyFiles": [
+        "snek-grammar.md"
+      ]
+    },
+    "public": {
+      "path": "public",
+      "purpose": "Public files",
+      "fileCount": 3,
+      "lastAccessed": 1790412230853,
+      "keyFiles": [
+        "favicon.svg",
+        "icons.svg",
+        "sneklogo.png"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 11,
+      "lastAccessed": 1790412230854,
+      "keyFiles": [
+        "app.css",
+        "app.tsx",
+        "ast.ts",
+        "dfa.ts",
+        "index.css"
+      ]
+    },
+    "tooldata": {
+      "path": "tooldata",
+      "purpose": null,
+      "fileCount": 5,
+      "lastAccessed": 1790412230866,
+      "keyFiles": [
+        "checklist.json",
+        "ignore.json",
+        "logs.jsonl",
+        "output.txt",
+        "rules.md"
+      ]
+    },
+    "src\\assets": {
+      "path": "src\\assets",
+      "purpose": "Static assets",
+      "fileCount": 3,
+      "lastAccessed": 1790412230869,
+      "keyFiles": [
+        "hero.png",
+        "preact.svg",
+        "vite.svg"
+      ]
+    },
+    "src\\components": {
+      "path": "src\\components",
+      "purpose": "UI components",
+      "fileCount": 8,
+      "lastAccessed": 1790412230869,
+      "keyFiles": [
+        "CodePanel.tsx",
+        "DfaGraph.tsx",
+        "FileUpload.tsx"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src/app.tsx",
+      "accessCount": 68,
+      "lastAccessed": 1790489452192,
+      "type": "file"
+    },
+    {
+      "path": "src/components/DfaGraph.tsx",
+      "accessCount": 47,
+      "lastAccessed": 1790485609519,
+      "type": "file"
+    },
+    {
+      "path": "src/components/CodePanel.tsx",
+      "accessCount": 39,
+      "lastAccessed": 1790485864854,
+      "type": "file"
+    },
+    {
+      "path": "src/compiler/parser.ts",
+      "accessCount": 30,
+      "lastAccessed": 1790490037575,
+      "type": "file"
+    },
+    {
+      "path": "src/compiler/steps.ts",
+      "accessCount": 15,
+      "lastAccessed": 1790490073101,
+      "type": "file"
+    },
+    {
+      "path": "src/compiler/messages.ts",
+      "accessCount": 14,
+      "lastAccessed": 1790490063501,
+      "type": "file"
+    },
+    {
+      "path": "src/compiler/lexer.ts",
+      "accessCount": 10,
+      "lastAccessed": 1790485557442,
+      "type": "file"
+    },
+    {
+      "path": "src/app.css",
+      "accessCount": 9,
+      "lastAccessed": 1790422398368,
+      "type": "file"
+    },
+    {
+      "path": "src/components/PhaseFlowchart.tsx",
+      "accessCount": 8,
+      "lastAccessed": 1790415916311,
+      "type": "file"
+    },
+    {
+      "path": "src/components/TransitionTable.tsx",
+      "accessCount": 8,
+      "lastAccessed": 1790485608709,
+      "type": "file"
+    },
+    {
+      "path": "src/compiler/dfa.ts",
+      "accessCount": 7,
+      "lastAccessed": 1790433694997,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ZoomTransition.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1790432888839,
+      "type": "file"
+    },
+    {
+      "path": "src/components/PdaStackView.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1790485824689,
+      "type": "file"
+    },
+    {
+      "path": "src/components/PdaGraph.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1790488792431,
+      "type": "file"
+    },
+    {
+      "path": "docs/checklist.md",
+      "accessCount": 6,
+      "lastAccessed": 1790490663350,
+      "type": "file"
+    },
+    {
+      "path": "src",
+      "accessCount": 5,
+      "lastAccessed": 1790485710037,
+      "type": "directory"
+    },
+    {
+      "path": "src/components/Scrubber.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1790416712462,
+      "type": "file"
+    },
+    {
+      "path": "src/components/Navbar.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1790487641253,
+      "type": "file"
+    },
+    {
+      "path": "docs/snek-grammar.md",
+      "accessCount": 4,
+      "lastAccessed": 1790490552578,
+      "type": "file"
+    },
+    {
+      "path": "tooldata/checklist.json",
+      "accessCount": 3,
+      "lastAccessed": 1790413107191,
+      "type": "file"
+    },
+    {
+      "path": "src/components/StepSlider.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1790414987718,
+      "type": "file"
+    },
+    {
+      "path": "src/styles/colors.ts",
+      "accessCount": 3,
+      "lastAccessed": 1790485609122,
+      "type": "file"
+    },
+    {
+      "path": "src/compiler/pda.ts",
+      "accessCount": 3,
+      "lastAccessed": 1790487594964,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ParserTokenPanel.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1790487966561,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 3,
+      "lastAccessed": 1790490598107,
+      "type": "file"
+    },
+    {
+      "path": "docs/rules.md",
+      "accessCount": 3,
+      "lastAccessed": 1790490960808,
+      "type": "file"
+    },
+    {
+      "path": "src/components/StepDetailsPanel.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1790413890361,
+      "type": "file"
+    },
+    {
+      "path": "src/compiler/ast.ts",
+      "accessCount": 2,
+      "lastAccessed": 1790484621915,
+      "type": "file"
+    },
+    {
+      "path": "src/compiler/tokens.ts",
+      "accessCount": 2,
+      "lastAccessed": 1790485557152,
+      "type": "file"
+    },
+    {
+      "path": "src/components/PdaTransitionTable.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1790487605891,
+      "type": "file"
+    },
+    {
+      "path": "docs/compiler-phases.md",
+      "accessCount": 2,
+      "lastAccessed": 1790490551403,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 1,
+      "lastAccessed": 1790412348461,
+      "type": "file"
+    },
+    {
+      "path": "src/main.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1790412348835,
+      "type": "file"
+    },
+    {
+      "path": "vite.config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1790412349274,
+      "type": "file"
+    },
+    {
+      "path": "src/steps.ts",
+      "accessCount": 1,
+      "lastAccessed": 1790412355679,
+      "type": "file"
+    },
+    {
+      "path": "src/ast.ts",
+      "accessCount": 1,
+      "lastAccessed": 1790412356150,
+      "type": "file"
+    },
+    {
+      "path": "src/tokens.ts",
+      "accessCount": 1,
+      "lastAccessed": 1790412356637,
+      "type": "file"
+    },
+    {
+      "path": "src/lexer.ts",
+      "accessCount": 1,
+      "lastAccessed": 1790412357057,
+      "type": "file"
+    },
+    {
+      "path": "src/parser.ts",
+      "accessCount": 1,
+      "lastAccessed": 1790412357561,
+      "type": "file"
+    },
+    {
+      "path": "src/dfa.ts",
+      "accessCount": 1,
+      "lastAccessed": 1790412358022,
+      "type": "file"
+    },
+    {
+      "path": "tooldata/rules.md",
+      "accessCount": 1,
+      "lastAccessed": 1790412588291,
+      "type": "file"
+    },
+    {
+      "path": "src/test-parser.ts",
+      "accessCount": 1,
+      "lastAccessed": 1790412847881,
+      "type": "file"
+    },
+    {
+      "path": "src/components",
+      "accessCount": 1,
+      "lastAccessed": 1790412853203,
+      "type": "directory"
+    },
+    {
+      "path": "scripts/test-parser.ts",
+      "accessCount": 1,
+      "lastAccessed": 1790412873137,
+      "type": "file"
+    },
+    {
+      "path": "tsconfig.app.json",
+      "accessCount": 1,
+      "lastAccessed": 1790412986313,
+      "type": "file"
+    },
+    {
+      "path": "tsconfig.json",
+      "accessCount": 1,
+      "lastAccessed": 1790412986738,
+      "type": "file"
+    },
+    {
+      "path": "src/components/PhaseMinimap.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1790413214630,
+      "type": "file"
+    },
+    {
+      "path": "src/styles/fonts.ts",
+      "accessCount": 1,
+      "lastAccessed": 1790413490595,
+      "type": "file"
+    },
+    {
+      "path": "src/components/TokenStream.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1790419524860,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

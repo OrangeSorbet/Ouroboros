@@ -1,0 +1,15 @@
+html, body, #app {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0b0f;
+}
+* { box-sizing: border-box; }
+
+#app {
+  width: 100% !important;
+  max-width: 100% !important;
+  border-inline: none !important;
+  text-align: left !important;
+  display: block !important;
+}

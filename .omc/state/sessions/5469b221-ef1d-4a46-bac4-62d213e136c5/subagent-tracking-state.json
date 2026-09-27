@@ -1,0 +1,30 @@
+{
+  "agents": [
+    {
+      "agent_id": "a9f39800f30b9b6e0",
+      "agent_type": "claude",
+      "started_at": "2026-09-27T06:37:16.926Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-09-27T06:37:16.926Z",
+      "synthetic": true,
+      "telemetry_status": "unmatched_stop",
+      "telemetry_note": "SubagentStop arrived without a matching SubagentStart; native Agent/Task start telemetry was not observed."
+    },
+    {
+      "agent_id": "a9211d6df0b236cee",
+      "agent_type": "claude",
+      "started_at": "2026-09-27T06:37:45.262Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-09-27T06:37:45.262Z",
+      "synthetic": true,
+      "telemetry_status": "unmatched_stop",
+      "telemetry_note": "SubagentStop arrived without a matching SubagentStart; native Agent/Task start telemetry was not observed."
+    }
+  ],
+  "total_spawned": 0,
+  "total_completed": 2,
+  "total_failed": 0,
+  "last_updated": "2026-09-27T06:37:45.379Z"
+}

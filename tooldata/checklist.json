@@ -1,0 +1,820 @@
+{
+  "nodes": [
+    {
+      "id": "ead189f693",
+      "title": "Phase 1: Grammar & Lexer",
+      "status": "Todo",
+      "type": "heading",
+      "category": "",
+      "subcategory": "",
+      "contributor": "",
+      "description": "Define Snek's language and build the DFA-driven lexer.",
+      "created_at": "2026-09-25T16:46:04",
+      "updated_at": "2026-09-25T16:46:04",
+      "completed_at": null,
+      "children": [
+        {
+          "id": "fb5d144167",
+          "title": "Define Snek grammar (tokens, keywords, CFG rules)",
+          "status": "Done",
+          "type": "task",
+          "category": "Lexer",
+          "subcategory": "Grammar",
+          "contributor": "You",
+          "description": "Write formal grammar: alphabet, keywords, token types, and CFG production rules for Snek syntax.",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T16:48:03",
+          "completed_at": null,
+          "children": [
+            {
+              "id": "54b2b174d0",
+              "title": "Enumerate token types & keyword list",
+              "status": "Done",
+              "type": "task",
+              "category": "Lexer",
+              "subcategory": "Grammar",
+              "contributor": "You",
+              "description": "List all Snek keywords, operators, literals, identifiers.",
+              "created_at": "2026-09-25T16:57:02",
+              "updated_at": "2026-09-25T16:57:02",
+              "completed_at": null,
+              "children": []
+            },
+            {
+              "id": "ff9a90a1dd",
+              "title": "Draft CFG production rules",
+              "status": "Done",
+              "type": "task",
+              "category": "Lexer",
+              "subcategory": "Grammar",
+              "contributor": "You",
+              "description": "BNF/CFG rules for statements, expressions, blocks.",
+              "created_at": "2026-09-25T16:57:02",
+              "updated_at": "2026-09-25T16:57:02",
+              "completed_at": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "d732f98acf",
+          "title": "Build DFA transition table for lexer",
+          "status": "Done",
+          "type": "task",
+          "category": "Lexer",
+          "subcategory": "DFA",
+          "contributor": "You",
+          "description": "Design DFA states and transition function mapping alphabet to states.",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T16:46:04",
+          "completed_at": null,
+          "children": [
+            {
+              "id": "9a433543d3",
+              "title": "Define DFA alphabet & state set",
+              "status": "Done",
+              "type": "task",
+              "category": "Lexer",
+              "subcategory": "DFA",
+              "contributor": "You",
+              "description": "Enumerate input alphabet and all lexer DFA states.",
+              "created_at": "2026-09-25T16:57:02",
+              "updated_at": "2026-09-25T17:19:32",
+              "completed_at": "2026-09-25T17:19:32",
+              "children": []
+            },
+            {
+              "id": "fd71d9f012",
+              "title": "Define transition function (delta)",
+              "status": "Done",
+              "type": "task",
+              "category": "Lexer",
+              "subcategory": "DFA",
+              "contributor": "You",
+              "description": "Table mapping (state, char) -> next state.",
+              "created_at": "2026-09-25T16:57:02",
+              "updated_at": "2026-09-25T17:19:37",
+              "completed_at": "2026-09-25T17:19:37",
+              "children": []
+            },
+            {
+              "id": "14cc04cd8a",
+              "title": "Mark accepting states per token type",
+              "status": "Done",
+              "type": "task",
+              "category": "Lexer",
+              "subcategory": "DFA",
+              "contributor": "You",
+              "description": "Tag which DFA states emit which token kind.",
+              "created_at": "2026-09-25T16:57:02",
+              "updated_at": "2026-09-25T17:19:37",
+              "completed_at": "2026-09-25T17:19:37",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "11ca745e48",
+          "title": "Implement lexer.ts (char stream -> tokens)",
+          "status": "Done",
+          "type": "task",
+          "category": "Lexer",
+          "subcategory": "Implementation",
+          "contributor": "You",
+          "description": "TypeScript implementation of the DFA-driven lexer consuming Snek source and emitting Token objects.",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T17:19:46",
+          "completed_at": "2026-09-25T17:19:46",
+          "children": [
+            {
+              "id": "c25c532a2f",
+              "title": "Implement Token type & TokenKind enum",
+              "status": "Done",
+              "type": "task",
+              "category": "Lexer",
+              "subcategory": "Implementation",
+              "contributor": "You",
+              "description": "Define Token interface and enum of token kinds.",
+              "created_at": "2026-09-25T16:57:02",
+              "updated_at": "2026-09-25T17:19:46",
+              "completed_at": "2026-09-25T17:19:46",
+              "children": []
+            },
+            {
+              "id": "acf36679e5",
+              "title": "Implement DFA-driven scan loop",
+              "status": "Done",
+              "type": "task",
+              "category": "Lexer",
+              "subcategory": "Implementation",
+              "contributor": "You",
+              "description": "Main loop stepping the DFA char by char to produce tokens.",
+              "created_at": "2026-09-25T16:57:02",
+              "updated_at": "2026-09-25T17:19:46",
+              "completed_at": "2026-09-25T17:19:46",
+              "children": []
+            },
+            {
+              "id": "6f56af750c",
+              "title": "Handle whitespace/comment skipping",
+              "status": "Done",
+              "type": "task",
+              "category": "Lexer",
+              "subcategory": "Implementation",
+              "contributor": "You",
+              "description": "Skip insignificant characters without emitting tokens.",
+              "created_at": "2026-09-25T16:57:02",
+              "updated_at": "2026-09-25T17:19:46",
+              "completed_at": "2026-09-25T17:19:46",
+              "children": []
+            },
+            {
+              "id": "883f7ccf61",
+              "title": "Handle lexer errors (invalid char)",
+              "status": "Done",
+              "type": "task",
+              "category": "Lexer",
+              "subcategory": "Implementation",
+              "contributor": "You",
+              "description": "Report a clear error when no valid transition exists.",
+              "created_at": "2026-09-25T16:57:02",
+              "updated_at": "2026-09-25T17:19:46",
+              "completed_at": "2026-09-25T17:19:46",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "4b582fa7b0",
+          "title": "Console-log DFA state transitions per char",
+          "status": "Done",
+          "type": "task",
+          "category": "Lexer",
+          "subcategory": "Debug",
+          "contributor": "You",
+          "description": "Log (char, fromState, toState) per step; this trace feeds the later animation timeline.",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T16:46:04",
+          "completed_at": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "6ebd37eb70",
+      "title": "Phase 2: Parser",
+      "status": "Todo",
+      "type": "heading",
+      "category": "",
+      "subcategory": "",
+      "contributor": "",
+      "description": "Build the CFG/PDA-based parser and AST for Snek.",
+      "created_at": "2026-09-25T16:46:04",
+      "updated_at": "2026-09-25T16:46:04",
+      "completed_at": null,
+      "children": [
+        {
+          "id": "9e96904199",
+          "title": "Define CFG production rules for Snek",
+          "status": "Done",
+          "type": "task",
+          "category": "Parser",
+          "subcategory": "Grammar",
+          "contributor": "You",
+          "description": "Formalize CFG rules the parser will implement (expressions, statements, if-blocks).",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T17:28:09",
+          "completed_at": "2026-09-25T17:28:09",
+          "children": []
+        },
+        {
+          "id": "25ed8b0563",
+          "title": "Implement PDA-based/recursive-descent parser.ts",
+          "status": "Done",
+          "type": "task",
+          "category": "Parser",
+          "subcategory": "Implementation",
+          "contributor": "You",
+          "description": "Recursive-descent parser with an explicit stack to mirror PDA behavior.",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T17:28:09",
+          "completed_at": "2026-09-25T17:28:09",
+          "children": [
+            {
+              "id": "89a557f46d",
+              "title": "Implement expression parsing (precedence climbing)",
+              "status": "Done",
+              "type": "task",
+              "category": "Parser",
+              "subcategory": "Implementation",
+              "contributor": "You",
+              "description": "Parse arithmetic expressions with correct operator precedence.",
+              "created_at": "2026-09-25T16:57:02",
+              "updated_at": "2026-09-25T17:28:09",
+              "completed_at": "2026-09-25T17:28:09",
+              "children": []
+            },
+            {
+              "id": "10262fa9aa",
+              "title": "Implement statement parsing (print, if, assignment)",
+              "status": "Done",
+              "type": "task",
+              "category": "Parser",
+              "subcategory": "Implementation",
+              "contributor": "You",
+              "description": "Parse Snek statement forms into AST nodes.",
+              "created_at": "2026-09-25T16:57:02",
+              "updated_at": "2026-09-25T17:28:09",
+              "completed_at": "2026-09-25T17:28:09",
+              "children": []
+            },
+            {
+              "id": "aab6f77b5b",
+              "title": "Implement explicit PDA stack tracking",
+              "status": "Done",
+              "type": "task",
+              "category": "Parser",
+              "subcategory": "Implementation",
+              "contributor": "You",
+              "description": "Maintain a visible stack structure mirroring PDA pushes/pops.",
+              "created_at": "2026-09-25T16:57:02",
+              "updated_at": "2026-09-25T17:28:09",
+              "completed_at": "2026-09-25T17:28:09",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "2d88f71a76",
+          "title": "Build AST node types",
+          "status": "Done",
+          "type": "task",
+          "category": "Parser",
+          "subcategory": "AST",
+          "contributor": "You",
+          "description": "Define TypeScript types/interfaces for AST nodes (Program, Statement, Expression variants).",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T17:28:10",
+          "completed_at": "2026-09-25T17:28:10",
+          "children": []
+        },
+        {
+          "id": "274b22a235",
+          "title": "Expose parser stack trace for visualization",
+          "status": "Done",
+          "type": "task",
+          "category": "Parser",
+          "subcategory": "Visualization Hooks",
+          "contributor": "You",
+          "description": "Emit a step-by-step trace of stack pushes/pops for the animation layer to consume.",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T17:28:11",
+          "completed_at": "2026-09-25T17:28:11",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "25db6c70a5",
+      "title": "Phase 3: DFA Graph Visualization",
+      "status": "Todo",
+      "type": "heading",
+      "category": "",
+      "subcategory": "",
+      "contributor": "",
+      "description": "Render the DFA as an interactive React Flow graph.",
+      "created_at": "2026-09-25T16:46:04",
+      "updated_at": "2026-09-25T16:46:04",
+      "completed_at": null,
+      "children": [
+        {
+          "id": "31668d7cc5",
+          "title": "Set up @xyflow/react canvas component",
+          "status": "Todo",
+          "type": "task",
+          "category": "Visualization",
+          "subcategory": "Setup",
+          "contributor": "You",
+          "description": "Base React Flow canvas wired into Preact via preact/compat.",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T16:46:04",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "f2c7ceee1d",
+          "title": "Render DFA states as nodes, transitions as edges",
+          "status": "Todo",
+          "type": "task",
+          "category": "Visualization",
+          "subcategory": "Graph",
+          "contributor": "You",
+          "description": "Map the DFA transition table to React Flow nodes/edges.",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T16:46:04",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "c8511b7671",
+          "title": "Highlight active state during lexing",
+          "status": "Todo",
+          "type": "task",
+          "category": "Visualization",
+          "subcategory": "Graph",
+          "contributor": "You",
+          "description": "Sync active DFA state with the lexer trace to highlight the current node live.",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T16:46:04",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "a1c2d3e4f5",
+          "title": "Redraw DFA nodes as circles; accepting states as double circles",
+          "status": "Todo",
+          "type": "task",
+          "category": "Visualization",
+          "subcategory": "Graph",
+          "contributor": "You",
+          "description": "Textbook automaton convention: states are circles, accepting states get a double circle, non-accepting a single circle. Replace current rectangle nodes.",
+          "created_at": "2026-09-26T13:00:00",
+          "updated_at": "2026-09-26T13:00:00",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "b2c3d4e5f6",
+          "title": "Add explicit start arrow into START state",
+          "status": "Todo",
+          "type": "task",
+          "category": "Visualization",
+          "subcategory": "Graph",
+          "contributor": "You",
+          "description": "Free-floating arrow (no source node) pointing into START, per formal DFA/automaton diagram convention.",
+          "created_at": "2026-09-26T13:00:00",
+          "updated_at": "2026-09-26T13:00:00",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "c3d4e5f6a7",
+          "title": "Render live transition table (delta matrix) synced to current step",
+          "status": "Todo",
+          "type": "task",
+          "category": "Visualization",
+          "subcategory": "Graph",
+          "contributor": "You",
+          "description": "Show the actual delta(state, class) -> state table on screen, not just in code; highlight the active cell for the current step.",
+          "created_at": "2026-09-26T13:00:00",
+          "updated_at": "2026-09-26T13:00:00",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "d4e5f6a7b8",
+          "title": "Enforce one-transition-per-character playback; show epsilon/acceptance as its own visible step",
+          "status": "Todo",
+          "type": "task",
+          "category": "Visualization",
+          "subcategory": "Graph",
+          "contributor": "You",
+          "description": "Never skip or merge steps. On acceptance, show the epsilon step (no character consumed, DFA returns to START) as a distinct scrubber step, not silently folded into the next character's transition.",
+          "created_at": "2026-09-26T13:00:00",
+          "updated_at": "2026-09-26T13:00:00",
+          "completed_at": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "91a169b7e2",
+      "title": "Phase 4: Animation Layer",
+      "status": "Todo",
+      "type": "heading",
+      "category": "",
+      "subcategory": "",
+      "contributor": "",
+      "description": "Fluid GSAP animations with PPT-style playback controls.",
+      "created_at": "2026-09-25T16:46:04",
+      "updated_at": "2026-09-25T16:46:04",
+      "completed_at": null,
+      "children": [
+        {
+          "id": "b2deaf8445",
+          "title": "GSAP timeline controller (play/pause/step/scrub)",
+          "status": "Todo",
+          "type": "task",
+          "category": "Animation",
+          "subcategory": "Controls",
+          "contributor": "You",
+          "description": "GSAP timeline wrapping the lexer/parser trace steps with playback controls.",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T16:46:04",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "90dd37872f",
+          "title": "Animate characters flowing into DFA graph",
+          "status": "Todo",
+          "type": "task",
+          "category": "Animation",
+          "subcategory": "Lexer Animation",
+          "contributor": "You",
+          "description": "Animate each source character traveling into the active DFA node live.",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T16:46:04",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "124b46cd91",
+          "title": "Animate PDA stack push/pop during parsing",
+          "status": "Todo",
+          "type": "task",
+          "category": "Animation",
+          "subcategory": "Parser Animation",
+          "contributor": "You",
+          "description": "Visualize stack grow/shrink as the parser consumes tokens.",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T16:46:04",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "348520cea8",
+          "title": "Fluid color transitions on state change",
+          "status": "Todo",
+          "type": "task",
+          "category": "Animation",
+          "subcategory": "Styling",
+          "contributor": "You",
+          "description": "Smooth color interpolation on node highlight changes using GSAP.",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T16:46:04",
+          "completed_at": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "67e0fb1273",
+      "title": "Phase 5: PPT & Delivery",
+      "status": "Todo",
+      "type": "heading",
+      "category": "",
+      "subcategory": "",
+      "contributor": "",
+      "description": "Record the demo and assemble the final presentation.",
+      "created_at": "2026-09-25T16:46:04",
+      "updated_at": "2026-09-25T16:46:04",
+      "completed_at": null,
+      "children": [
+        {
+          "id": "d598544ad3",
+          "title": "Screen-record working animation",
+          "status": "Todo",
+          "type": "task",
+          "category": "PPT",
+          "subcategory": "",
+          "contributor": "You",
+          "description": "Capture a screen recording of the full compile animation for embedding in slides.",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T16:46:04",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "79f128ec1c",
+          "title": "Build slide deck (grammar, DFA, CFG, demo, decidability)",
+          "status": "Todo",
+          "type": "task",
+          "category": "PPT",
+          "subcategory": "",
+          "contributor": "You",
+          "description": "Assemble the final PPT: grammar, DFA, CFG/PDA, demo recording, decidability discussion.",
+          "created_at": "2026-09-25T16:46:04",
+          "updated_at": "2026-09-25T16:46:04",
+          "completed_at": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "cf6447de6b",
+      "title": "Phase 3b: Source Input",
+      "status": "Todo",
+      "type": "heading",
+      "category": "",
+      "subcategory": "",
+      "contributor": "",
+      "description": "Load Snek source into the app via .snek file upload.",
+      "created_at": "2026-09-25T17:32:14",
+      "updated_at": "2026-09-25T17:32:14",
+      "completed_at": null,
+      "children": [
+        {
+          "id": "88c541f479",
+          "title": "Build .snek file upload input",
+          "status": "Todo",
+          "type": "task",
+          "category": "Visualization",
+          "subcategory": "Input",
+          "contributor": "You",
+          "description": "File picker component that reads an uploaded .snek file's text content into app state.",
+          "created_at": "2026-09-25T17:32:14",
+          "updated_at": "2026-09-25T17:32:14",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "42a8b942cd",
+          "title": "Wire uploaded source into lexer/parser pipeline",
+          "status": "Todo",
+          "type": "task",
+          "category": "Visualization",
+          "subcategory": "Input",
+          "contributor": "You",
+          "description": "Pass the uploaded .snek text through lex() and parse() to drive the DFA/PDA visualization.",
+          "created_at": "2026-09-25T17:32:14",
+          "updated_at": "2026-09-25T17:32:14",
+          "completed_at": null,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "65909745ae",
+      "title": "Phase 6: Multi-Phase Compiler Flowchart",
+      "status": "Todo",
+      "type": "heading",
+      "category": "",
+      "subcategory": "",
+      "contributor": "",
+      "description": "Zoomable cinematic view: major compiler phases (Tokenize -> Parse -> AST->instr -> CFG/optimize -> bytecode) as a flowchart, zoom into Phase1 DFA/PDA views, zoom out on completion with an animated token traveling between phase boxes.",
+      "created_at": "2026-09-26T12:38:09",
+      "updated_at": "2026-09-26T12:38:09",
+      "completed_at": null,
+      "children": [
+        {
+          "id": "8f4dee93b6",
+          "title": "Build PhaseFlowchart.tsx (major phases as boxes+edges)",
+          "status": "Todo",
+          "type": "task",
+          "category": "Visualization",
+          "subcategory": "Phases",
+          "contributor": "You",
+          "description": "Top-level flowchart of the 5 real compiler stages, each a clickable box.",
+          "created_at": "2026-09-26T12:38:09",
+          "updated_at": "2026-09-26T12:38:09",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "37d117e4af",
+          "title": "Implement zoom-into-phase transition",
+          "status": "Todo",
+          "type": "task",
+          "category": "Animation",
+          "subcategory": "Phases",
+          "contributor": "You",
+          "description": "Camera/UI transition from flowchart box into that phase's detailed view (e.g. DFA graph for Lexical Analysis).",
+          "created_at": "2026-09-26T12:38:09",
+          "updated_at": "2026-09-26T12:38:09",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "108e791c37",
+          "title": "Implement zoom-out + phase completion state",
+          "status": "Todo",
+          "type": "task",
+          "category": "Animation",
+          "subcategory": "Phases",
+          "contributor": "You",
+          "description": "On finishing a phase's steps, mark its flowchart box green/checked and zoom back out.",
+          "created_at": "2026-09-26T12:38:09",
+          "updated_at": "2026-09-26T12:38:09",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "88e9059cbc",
+          "title": "Animate token/file traveling between phase boxes",
+          "status": "Todo",
+          "type": "task",
+          "category": "Animation",
+          "subcategory": "Phases",
+          "contributor": "You",
+          "description": "Small icon travels along the connecting edge from completed phase to the next.",
+          "created_at": "2026-09-26T12:38:09",
+          "updated_at": "2026-09-26T12:38:09",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "c4fb7d3ca6",
+          "title": "Build Phase2 (Syntax Analysis) PDA stack view",
+          "status": "Todo",
+          "type": "task",
+          "category": "Visualization",
+          "subcategory": "Phases",
+          "contributor": "You",
+          "description": "Reuse parser.ts's PdaStep trace to show push/pop stack visualization analogous to the DFA view.",
+          "created_at": "2026-09-26T12:38:09",
+          "updated_at": "2026-09-26T12:38:09",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "e5f6a7b8c9",
+          "title": "Build PhaseMinimap.tsx (persistent widget, bottom-right, above scrubber)",
+          "status": "Todo",
+          "type": "task",
+          "category": "Visualization",
+          "subcategory": "Phases",
+          "contributor": "You",
+          "description": "Small always-visible strip showing the 5 major phases and which one is currently active/completed -- distinct from the full-screen PhaseFlowchart zoom view.",
+          "created_at": "2026-09-26T13:00:00",
+          "updated_at": "2026-09-26T13:00:00",
+          "completed_at": null,
+          "children": []
+        },
+        {
+          "id": "f6a7b8c9d0",
+          "title": "Sync minimap highlight with active phase + completion checkmarks",
+          "status": "Todo",
+          "type": "task",
+          "category": "Animation",
+          "subcategory": "Phases",
+          "contributor": "You",
+          "description": "Minimap updates live as the user scrubs within a phase, and marks a phase green/checked once its steps are exhausted, matching the main flowchart's zoom-out state.",
+          "created_at": "2026-09-26T13:00:00",
+          "updated_at": "2026-09-26T13:00:00",
+          "completed_at": null,
+          "children": []
+        }
+      ]
+    }
+  ],
+  "contributors": [
+    {
+      "name": "You",
+      "id": "9aad483557",
+      "description": "",
+      "phone": "",
+      "email": "",
+      "designation": "",
+      "children": [],
+      "category": ""
+    }
+  ],
+  "categories": [
+    {
+      "name": "Lexer",
+      "id": "f4b1213f9d",
+      "children": [
+        {
+          "name": "Grammar",
+          "children": [],
+          "id": "a2b176f33c"
+        },
+        {
+          "name": "DFA",
+          "children": [],
+          "id": "551fff88a4"
+        },
+        {
+          "name": "Implementation",
+          "children": [],
+          "id": "fdc0ec3e69"
+        },
+        {
+          "name": "Debug",
+          "children": [],
+          "id": "a10e40ee62"
+        }
+      ]
+    },
+    {
+      "name": "Parser",
+      "id": "b47025e36d",
+      "children": [
+        {
+          "name": "Grammar",
+          "children": [],
+          "id": "f874f52be4"
+        },
+        {
+          "name": "Implementation",
+          "children": [],
+          "id": "cafbf04eb3"
+        },
+        {
+          "name": "AST",
+          "children": [],
+          "id": "285fdb951c"
+        },
+        {
+          "name": "Visualization Hooks",
+          "children": [],
+          "id": "a54b29e792"
+        }
+      ]
+    },
+    {
+      "name": "Visualization",
+      "id": "1fa2d19725",
+      "children": [
+        {
+          "name": "Setup",
+          "children": [],
+          "id": "6f41fa8ff8"
+        },
+        {
+          "name": "Graph",
+          "children": [],
+          "id": "f74ec53094"
+        }
+      ]
+    },
+    {
+      "name": "Animation",
+      "id": "1c10a7b6bd",
+      "children": [
+        {
+          "name": "Controls",
+          "children": [],
+          "id": "7b4abc1b75"
+        },
+        {
+          "name": "Lexer Animation",
+          "children": [],
+          "id": "1b356d0161"
+        },
+        {
+          "name": "Parser Animation",
+          "children": [],
+          "id": "afbb65a2df"
+        },
+        {
+          "name": "Styling",
+          "children": [],
+          "id": "3c96af7f4e"
+        }
+      ]
+    },
+    {
+      "name": "PPT",
+      "id": "5efb167190",
+      "children": []
+    }
+  ],
+  "statuses": [
+    "Todo",
+    "In Progress",
+    "Review",
+    "Done"
+  ]
+}
