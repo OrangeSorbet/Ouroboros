@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"sed -i 's|\\\\[\\\\[\\\"          Snek\\\\\\\\n\\\", \\\"          Ouroboros\\\\\\\\n\\\"\\\\]\\\\]|[[\\\"          Snek\\\", \\\"          Ouroboros\\\"]]|' \\\"$CLAUDE_JOB_DIR/tmp/rename.mjs\\\" 2>/dev/null || sed -i 's|\\\\...",
+  "error": "Exit code 1\n6:  \"src/components/Navbar.tsx\": [[\"          Snek\\n\", \"          Ouroboros\\n\"]],\nok index.html\nok package.json\nok package-lock.json\nfile:///C:/Users/ashvi/.claude/jobs/5469b221/tmp/rename.mjs:31\r\n    if (!s.includes(a)) throw new Error(`${file}: missing ${a}`);\r\n                              ^\r\n\r\nError: src/components/Navbar.tsx: missing           Snek\r\n\r\n    at file:///C:/Users/ashvi/.claude/jobs/5469b221/tmp/rename.mjs:31:31\r\n\u001b[90m    at ModuleJob.run (node:internal/modules/esm/mo...",
+  "timestamp": "2026-09-27T10:25:49.217Z",
+  "retry_count": 1
+}

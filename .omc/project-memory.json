@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1790412230923,
+  "lastScanned": 1790503036491,
   "projectRoot": "C:\\Users\\ashvi\\Documents\\VS_Codes\\HTML\\Snek",
   "techStack": {
     "languages": [
@@ -59,50 +59,86 @@
     "mainDirectories": [
       "docs",
       "public",
+      "scripts",
       "src"
     ],
     "gitBranches": null
   },
   "customNotes": [],
   "directoryMap": {
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 4,
+      "lastAccessed": 1790503036434,
+      "keyFiles": [
+        "favicon.svg",
+        "icons.svg",
+        "index.html",
+        "sneklogo.png"
+      ]
+    },
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
-      "fileCount": 1,
-      "lastAccessed": 1790412230852,
+      "fileCount": 8,
+      "lastAccessed": 1790503036435,
       "keyFiles": [
-        "snek-grammar.md"
+        "agent-brief.md",
+        "checklist.md",
+        "compiler-phases.md",
+        "phase34plan.md",
+        "ppt.md"
       ]
+    },
+    "parked": {
+      "path": "parked",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1790503036444,
+      "keyFiles": []
     },
     "public": {
       "path": "public",
       "purpose": "Public files",
       "fileCount": 3,
-      "lastAccessed": 1790412230853,
+      "lastAccessed": 1790503036444,
       "keyFiles": [
         "favicon.svg",
         "icons.svg",
         "sneklogo.png"
       ]
     },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 5,
+      "lastAccessed": 1790503036445,
+      "keyFiles": [
+        "check-ir.ts",
+        "check-lex.ts",
+        "check-opt.ts",
+        "check-parse.ts",
+        "check-semantic.ts"
+      ]
+    },
     "src": {
       "path": "src",
       "purpose": "Source code",
-      "fileCount": 11,
-      "lastAccessed": 1790412230854,
+      "fileCount": 4,
+      "lastAccessed": 1790503036445,
       "keyFiles": [
         "app.css",
         "app.tsx",
-        "ast.ts",
-        "dfa.ts",
-        "index.css"
+        "index.css",
+        "main.tsx"
       ]
     },
     "tooldata": {
       "path": "tooldata",
       "purpose": null,
       "fileCount": 5,
-      "lastAccessed": 1790412230866,
+      "lastAccessed": 1790503036446,
       "keyFiles": [
         "checklist.json",
         "ignore.json",
@@ -111,11 +147,39 @@
         "rules.md"
       ]
     },
+    "dist\\assets": {
+      "path": "dist\\assets",
+      "purpose": "Static assets",
+      "fileCount": 3,
+      "lastAccessed": 1790503036447,
+      "keyFiles": [
+        "elk-worker.min-r_yRvuMO.js",
+        "index-D41HzGah.js",
+        "index-Do3VNAD5.css"
+      ]
+    },
+    "parked\\components": {
+      "path": "parked\\components",
+      "purpose": "UI components",
+      "fileCount": 0,
+      "lastAccessed": 1790503036448,
+      "keyFiles": []
+    },
+    "parked\\scripts": {
+      "path": "parked\\scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 2,
+      "lastAccessed": 1790503036449,
+      "keyFiles": [
+        "check-bytecode.ts",
+        "check-vm.ts"
+      ]
+    },
     "src\\assets": {
       "path": "src\\assets",
       "purpose": "Static assets",
       "fileCount": 3,
-      "lastAccessed": 1790412230869,
+      "lastAccessed": 1790503036451,
       "keyFiles": [
         "hero.png",
         "preact.svg",
@@ -125,11 +189,11 @@
     "src\\components": {
       "path": "src\\components",
       "purpose": "UI components",
-      "fileCount": 8,
-      "lastAccessed": 1790412230869,
+      "fileCount": 11,
+      "lastAccessed": 1790503036452,
       "keyFiles": [
         "CodePanel.tsx",
-        "DfaGraph.tsx",
+        "ExplanationGrid.tsx",
         "FileUpload.tsx"
       ]
     }
@@ -137,26 +201,26 @@
   "hotPaths": [
     {
       "path": "src/app.tsx",
-      "accessCount": 68,
-      "lastAccessed": 1790489452192,
+      "accessCount": 74,
+      "lastAccessed": 1790504377391,
       "type": "file"
     },
     {
       "path": "src/components/DfaGraph.tsx",
-      "accessCount": 47,
-      "lastAccessed": 1790485609519,
+      "accessCount": 48,
+      "lastAccessed": 1790497377412,
       "type": "file"
     },
     {
       "path": "src/components/CodePanel.tsx",
-      "accessCount": 39,
-      "lastAccessed": 1790485864854,
+      "accessCount": 41,
+      "lastAccessed": 1790497410345,
       "type": "file"
     },
     {
       "path": "src/compiler/parser.ts",
-      "accessCount": 30,
-      "lastAccessed": 1790490037575,
+      "accessCount": 31,
+      "lastAccessed": 1790497623310,
       "type": "file"
     },
     {
@@ -173,8 +237,8 @@
     },
     {
       "path": "src/compiler/lexer.ts",
-      "accessCount": 10,
-      "lastAccessed": 1790485557442,
+      "accessCount": 11,
+      "lastAccessed": 1790497632257,
       "type": "file"
     },
     {
@@ -185,8 +249,8 @@
     },
     {
       "path": "src/components/PhaseFlowchart.tsx",
-      "accessCount": 8,
-      "lastAccessed": 1790415916311,
+      "accessCount": 9,
+      "lastAccessed": 1790497719479,
       "type": "file"
     },
     {
@@ -196,9 +260,15 @@
       "type": "file"
     },
     {
+      "path": "docs/checklist.md",
+      "accessCount": 8,
+      "lastAccessed": 1790496815040,
+      "type": "file"
+    },
+    {
       "path": "src/compiler/dfa.ts",
-      "accessCount": 7,
-      "lastAccessed": 1790433694997,
+      "accessCount": 8,
+      "lastAccessed": 1790497511667,
       "type": "file"
     },
     {
@@ -220,9 +290,9 @@
       "type": "file"
     },
     {
-      "path": "docs/checklist.md",
+      "path": "docs/rules.md",
       "accessCount": 6,
-      "lastAccessed": 1790490663350,
+      "lastAccessed": 1790496812425,
       "type": "file"
     },
     {
@@ -232,21 +302,33 @@
       "type": "directory"
     },
     {
+      "path": "src/components/Navbar.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1790504756120,
+      "type": "file"
+    },
+    {
       "path": "src/components/Scrubber.tsx",
       "accessCount": 4,
       "lastAccessed": 1790416712462,
       "type": "file"
     },
     {
-      "path": "src/components/Navbar.tsx",
-      "accessCount": 4,
-      "lastAccessed": 1790487641253,
-      "type": "file"
-    },
-    {
       "path": "docs/snek-grammar.md",
       "accessCount": 4,
       "lastAccessed": 1790490552578,
+      "type": "file"
+    },
+    {
+      "path": "src/styles/colors.ts",
+      "accessCount": 4,
+      "lastAccessed": 1790497176582,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 4,
+      "lastAccessed": 1790504424599,
       "type": "file"
     },
     {
@@ -262,12 +344,6 @@
       "type": "file"
     },
     {
-      "path": "src/styles/colors.ts",
-      "accessCount": 3,
-      "lastAccessed": 1790485609122,
-      "type": "file"
-    },
-    {
       "path": "src/compiler/pda.ts",
       "accessCount": 3,
       "lastAccessed": 1790487594964,
@@ -280,15 +356,27 @@
       "type": "file"
     },
     {
-      "path": "CLAUDE.md",
+      "path": "docs/phase34plan.md",
       "accessCount": 3,
-      "lastAccessed": 1790490598107,
+      "lastAccessed": 1790496814207,
       "type": "file"
     },
     {
-      "path": "docs/rules.md",
+      "path": "src/compiler/tokens.ts",
       "accessCount": 3,
-      "lastAccessed": 1790490960808,
+      "lastAccessed": 1790497106354,
+      "type": "file"
+    },
+    {
+      "path": "src/compiler/ast.ts",
+      "accessCount": 3,
+      "lastAccessed": 1790497107234,
+      "type": "file"
+    },
+    {
+      "path": "docs/compiler-phases.md",
+      "accessCount": 3,
+      "lastAccessed": 1790497347197,
       "type": "file"
     },
     {
@@ -298,27 +386,15 @@
       "type": "file"
     },
     {
-      "path": "src/compiler/ast.ts",
-      "accessCount": 2,
-      "lastAccessed": 1790484621915,
-      "type": "file"
-    },
-    {
-      "path": "src/compiler/tokens.ts",
-      "accessCount": 2,
-      "lastAccessed": 1790485557152,
-      "type": "file"
-    },
-    {
       "path": "src/components/PdaTransitionTable.tsx",
       "accessCount": 2,
       "lastAccessed": 1790487605891,
       "type": "file"
     },
     {
-      "path": "docs/compiler-phases.md",
+      "path": "src/components/PhaseMinimap.tsx",
       "accessCount": 2,
-      "lastAccessed": 1790490551403,
+      "lastAccessed": 1790497690175,
       "type": "file"
     },
     {
@@ -409,12 +485,6 @@
       "path": "tsconfig.json",
       "accessCount": 1,
       "lastAccessed": 1790412986738,
-      "type": "file"
-    },
-    {
-      "path": "src/components/PhaseMinimap.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1790413214630,
       "type": "file"
     },
     {

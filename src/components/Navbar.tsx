@@ -33,7 +33,7 @@ export function Navbar({ filename, tokenCount, onLoad }: NavbarProps) {
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <SnekLogo size={38} />
         <span style={{ fontFamily: fonts.mono, fontSize: 20, letterSpacing: 0.5, color: colors.textPrimary, fontWeight: 700 }}>
-          Snek
+          Ouroboros
         </span>
       </div>
 

@@ -1,4 +1,4 @@
-# Compiler Phases — Reference for Snek
+# Compiler Phases — Reference for Ouroboros (the Snek compiler)
 
 Background doc for the course project + PPT. Explains real compiler pipelines, maps them to Theory of Computation (ToC) concepts, and states what Snek implements vs. gestures at.
 
@@ -54,16 +54,19 @@ Key difference: C compiles ahead-of-time (AOT) all the way to native machine cod
 
 ## 4. Snek's scope decision
 
-Stick with the **Python/bytecode model**: stop at bytecode, no linking, no native codegen. Keeps scope sane, still hits every required ToC concept.
+Stick with the **Python/bytecode model**: stop at bytecode (then run it on a VM), no linking, no native codegen. Keeps scope sane, still hits every required ToC concept.
 
-- **Phase 1 (Lexer)** and **Phase 2 (Parser)** — full depth. Lexer = DFA (`src/dfa.ts`, `src/lexer.ts`), parser = CFG/PDA via recursive descent with explicit stack (`src/parser.ts`, `src/ast.ts`). These map directly to the syllabus and are the project's theoretical core.
-- **Phases 3-5** (AST->instructions, CFG/optimize, bytecode emission) — lightweight/symbolic. Represented in the Phase 6 flowchart as boxes the animation passes through, without full implementation. Talking point: "this is as far as CPython goes too — no linking, no native codegen."
+**Superseded detail:** this section originally planned Phases 3–5 as symbolic boxes only. The approved plan (`docs/phase34plan.md`) implements all of them for real, as **7 phases**: Lexical Analysis → Syntax Analysis → Semantic Analysis → AST → Instructions → Control-Flow Graph + Optimize → Bytecode Emission → Execution (VM). That file is the source of truth for scope, theory mapping, and UI.
 
-This is also why `docs/checklist.md` Phase 6 is titled "Multi-Phase Compiler Flowchart" — it's the zoomable view showing all 5 real stages as boxes, zooming into Phase 1/2 for the actual DFA/PDA animation, and passing through 3-5 symbolically before reaching a "bytecode" end state.
+- **Phase 1 (Lexer)** — DFA + longest-match scanner (`src/compiler/dfa.ts`, `src/compiler/lexer.ts`).
+- **Phase 2 (Parser)** — context-free grammar + table-driven LL(1) PDA (`src/compiler/grammar.ts`, `ll1.ts`, `parser.ts`, `astBuilder.ts`, `src/compiler/ast.ts`).
+- **Phases 3–7** — `semantic.ts`, `irgen.ts`, `optimize.ts`, `bytecode.ts`, `vm.ts` under `src/compiler/`.
 
 ## 5. Talking points for the PPT / viva
 
-- Lexer = DFA: alphabet, states, transition function, accepting states -> directly demoable via `src/dfa.ts` and the DFA graph view.
-- Parser = CFG + PDA: grammar in `docs/snek-grammar.md`, PDA stack trace in `parser.ts`'s `enter()`/`exit()`.
-- Decidability angle: constant folding / peephole optimization is decidable; general program optimization (e.g., "is this dead code reachable") is undecidable — good Rice's theorem callback if asked why Snek doesn't do full optimization.
-- Every stage after parsing is real in CPython/Java/C but progressively less automata-theoretic — justifies why Snek's depth drops off after Phase 2.
+See `docs/ppt.md` (slides, speaker notes, likely viva questions) and `docs/phase34plan.md` §2 (the Chomsky-hierarchy map). Short version:
+
+- Lexer = DFA: alphabet, states, transition function, accepting states -> demoable via `src/compiler/dfa.ts` and the DFA graph view.
+- Parser = context-free grammar + PDA: grammar in `docs/snek-grammar.md`, PDA expand/match trace from `src/compiler/parser.ts`.
+- Decidability angle: constant folding / peephole optimization is decidable; general program optimization (e.g., "is this dead code reachable") is undecidable — Rice's theorem callback for why Snek's optimizer is sound but incomplete.
+- Every stage after parsing is real in CPython/Java/C but progressively less automata-theoretic, ending in a Turing-complete VM whose halting is undecidable.

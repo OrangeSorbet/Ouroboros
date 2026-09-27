@@ -38,4 +38,15 @@ export const colors = {
   codeOperator: "#d4d4d4",
   codeLineNumber: "#6e7681",
   codeLineHighlight: "#2a2d3a",
+  codeString: "#ce9178",
+
+  // graph edge tones (control-flow graph branches, loop back-edges)
+  edgeTrue: "#22c55e",
+  edgeFalse: "#ef4444",
+  edgeBack: "#8b93a7",
+
+  warning: "#facc15",
+  typeBadge: "#60a5fa",
+  diffAdded: "rgba(34, 197, 94, 0.15)",
+  diffRemoved: "rgba(239, 68, 68, 0.15)",
 } as const;

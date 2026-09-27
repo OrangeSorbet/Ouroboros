@@ -1,155 +1,222 @@
-// The lexer's DFA: states, the transition function (delta), and which
-// states are accepting (and for which token kind). This file is the
-// formal automaton — lexer.ts just drives it character by character.
-// Keeping it separate is what lets Phase 3 render this table directly
-// as a React Flow graph without touching scanning logic.
+// The lexer's DFA as pure data: Q (State), Σ (CharClass), δ (TRANSITIONS
+// + delta()), q₀ (START) and F (ACCEPTING, with each state's scanner
+// action). This file is the formal automaton — lexer.ts is the
+// longest-match driver that runs it, and the lexical view renders these
+// tables directly. Real DFAs have no ε-moves, so there are none here:
+// "accept and restart at START" is the scanner's action, not an edge.
 
-import { TokenKind } from "./tokens";
+import { TokenKind } from "./tokens.ts";
 
 // Plain object + derived union type instead of `enum` — erasableSyntaxOnly
 // forbids enum declarations since they emit runtime code; this form
 // compiles away entirely while keeping `State.START`-style access.
 export const State = {
   START: "START",
+  IN_WHITESPACE: "IN_WHITESPACE",
+  IN_LINE_COMMENT: "IN_LINE_COMMENT",
   IN_IDENT: "IN_IDENT",
   IN_NUMBER: "IN_NUMBER",
-  IN_COMMENT: "IN_COMMENT",
-  SAW_EQ: "SAW_EQ",     // just consumed '='
-  SAW_LT: "SAW_LT",     // just consumed '<'
-  SAW_GT: "SAW_GT",     // just consumed '>'
-  SAW_BANG: "SAW_BANG", // just consumed '!'
-  DEAD: "DEAD",         // no valid transition — lexical error
+  BAD_NUMBER: "BAD_NUMBER",
+  SINGLE: "SINGLE",
+  SAW_EQ: "SAW_EQ",
+  SAW_EQ_EQ: "SAW_EQ_EQ",
+  SAW_LT: "SAW_LT",
+  SAW_LT_EQ: "SAW_LT_EQ",
+  SAW_GT: "SAW_GT",
+  SAW_GT_EQ: "SAW_GT_EQ",
+  SAW_BANG: "SAW_BANG",
+  SAW_BANG_EQ: "SAW_BANG_EQ",
+  SAW_AMP: "SAW_AMP",
+  SAW_AMP_AMP: "SAW_AMP_AMP",
+  SAW_PIPE: "SAW_PIPE",
+  SAW_PIPE_PIPE: "SAW_PIPE_PIPE",
+  SAW_SLASH: "SAW_SLASH",
+  IN_BLOCK_COMMENT: "IN_BLOCK_COMMENT",
+  BLOCK_STAR: "BLOCK_STAR",
+  BLOCK_END: "BLOCK_END",
+  IN_STRING: "IN_STRING",
+  STRING_ESC: "STRING_ESC",
+  STRING_END: "STRING_END",
+  DEAD: "DEAD", // trap: every undefined (state, class) pair lands here
 } as const;
 export type State = (typeof State)[keyof typeof State];
 
-// Single-character states are accepting immediately and don't need a
-// dedicated State entry — they're handled as one-shot transitions in
-// SINGLE_CHAR_TOKENS below (this keeps the state set from exploding).
-export const SINGLE_CHAR_TOKENS: Record<string, TokenKind> = {
+export const STATES = Object.values(State) as State[];
+
+// Σ: the DFA reads character classes, not raw characters, or δ would need a
+// column per Unicode code point. The classes must *partition* the
+// characters — every char in a class has to behave identically in every
+// state — which is why `n`/`t` get their own class: after a backslash in a
+// string they are valid escapes while other letters are not.
+export const CharClass = {
+  letter: "letter",
+  escLetter: "escLetter",
+  digit: "digit",
+  eq: "eq",
+  lt: "lt",
+  gt: "gt",
+  bang: "bang",
+  amp: "amp",
+  pipe: "pipe",
+  slash: "slash",
+  star: "star",
+  quote: "quote",
+  backslash: "backslash",
+  hash: "hash",
+  newline: "newline",
+  whitespace: "whitespace",
+  single: "single",
+  other: "other",
+} as const;
+export type CharClass = (typeof CharClass)[keyof typeof CharClass];
+
+export const CLASSES = Object.values(CharClass) as CharClass[];
+
+// The actual symbol set each class stands for — what edges and table
+// headers show (the class name is only an internal bucket).
+export const CLASS_LABELS: Record<CharClass, string> = {
+  letter: "[a-zA-Z_]∖{n,t}",
+  escLetter: "{n,t}",
+  digit: "[0-9]",
+  eq: "=",
+  lt: "<",
+  gt: ">",
+  bang: "!",
+  amp: "&",
+  pipe: "|",
+  slash: "/",
+  star: "*",
+  quote: "\"",
+  backslash: "\\",
+  hash: "#",
+  newline: "\\n",
+  whitespace: "␠ \\t \\r",
+  single: "+ - ( ) { } ; , [ ]",
+  other: "other",
+};
+
+// One-char tokens reached through SINGLE; the lexeme picks the kind, the
+// same way the keyword table refines IN_IDENT. `*` is listed here but has
+// its own class because it also closes block comments.
+export const SINGLE_KINDS: Record<string, TokenKind> = {
   "+": TokenKind.PLUS,
   "-": TokenKind.MINUS,
   "*": TokenKind.STAR,
-  "/": TokenKind.SLASH,
   "(": TokenKind.LPAREN,
   ")": TokenKind.RPAREN,
   "{": TokenKind.LBRACE,
   "}": TokenKind.RBRACE,
   ";": TokenKind.SEMI,
+  ",": TokenKind.COMMA,
+  "[": TokenKind.LBRACKET,
+  "]": TokenKind.RBRACKET,
 };
 
-// Character classification — the DFA's effective input alphabet is
-// these classes, not raw characters, or the table would be enormous.
-// "epsilon" and "reject" are pseudo-classes: classify() never returns
-// them, but they label the two kinds of edges every accepting/dead state
-// needs to keep this a *closed* automaton (every state has a way out):
-// "epsilon" = token accepted, no input consumed, restart at START;
-// "reject" = no valid continuation, fall into the DEAD trap state.
-export type CharClass =
-  | "letter"
-  | "digit"
-  | "eq"
-  | "lt"
-  | "gt"
-  | "bang"
-  | "hash"
-  | "newline"
-  | "whitespace"
-  | "single"
-  | "other"
-  | "epsilon"
-  | "reject";
-
-// Human-readable alphabet labels for graph/table edges — the raw class
-// name ("letter") is an internal bucket, not the actual input symbol set.
-export const CLASS_LABELS: Record<CharClass, string> = {
-  letter: "[a-zA-Z_]",
-  digit: "[0-9]",
-  eq: "'='",
-  lt: "'<'",
-  gt: "'>'",
-  bang: "'!'",
-  hash: "'#'",
-  newline: "'\\n'",
-  whitespace: "' '",
-  single: "single-char",
-  other: "other",
-  epsilon: "ε (accept)",
-  reject: "ε (reject)",
-};
+// Backslash escapes inside strings: escaped char -> the character it denotes.
+export const ESCAPES: Record<string, string> = { n: "\n", t: "\t", "\"": "\"", "\\": "\\" };
 
 export function classify(ch: string): CharClass {
+  if (ch === "n" || ch === "t") return "escLetter";
   if (/[a-zA-Z_]/.test(ch)) return "letter";
   if (/[0-9]/.test(ch)) return "digit";
-  if (ch === "=") return "eq";
-  if (ch === "<") return "lt";
-  if (ch === ">") return "gt";
-  if (ch === "!") return "bang";
-  if (ch === "#") return "hash";
-  if (ch === "\n") return "newline";
-  if (ch === " " || ch === "\t" || ch === "\r") return "whitespace";
-  if (ch in SINGLE_CHAR_TOKENS) return "single";
-  return "other";
+  switch (ch) {
+    case "=": return "eq";
+    case "<": return "lt";
+    case ">": return "gt";
+    case "!": return "bang";
+    case "&": return "amp";
+    case "|": return "pipe";
+    case "/": return "slash";
+    case "*": return "star";
+    case "\"": return "quote";
+    case "\\": return "backslash";
+    case "#": return "hash";
+    case "\n": return "newline";
+    case " ": case "\t": case "\r": return "whitespace";
+  }
+  return ch in SINGLE_KINDS ? "single" : "other";
 }
 
-// delta: (state, charClass) -> next state.
-// Real character-consuming entries continue a multi-char token; "epsilon"
-// entries are the accept-and-restart edge every accepting state needs
-// back to START, and "reject" is the trap edge into DEAD. Without these,
-// IN_IDENT/SAW_EQ/etc. would be dead ends with no outgoing edge — not a
-// real DFA. Single chars/whitespace/punctuation still resolve directly
-// in the scan loop (their "edge" is the START self-loop, drawn separately).
+// Every class except the listed ones -> `to` (for "loop on anything but…").
+function allBut(to: State, except: CharClass[]): Partial<Record<CharClass, State>> {
+  return Object.fromEntries(CLASSES.filter((c) => !except.includes(c)).map((c) => [c, to]));
+}
+
+// δ as written: only the entries that lead somewhere other than DEAD.
+// delta() below completes it into a total function.
 export const TRANSITIONS: Partial<Record<State, Partial<Record<CharClass, State>>>> = {
   [State.START]: {
+    whitespace: State.IN_WHITESPACE,
+    newline: State.IN_WHITESPACE,
+    hash: State.IN_LINE_COMMENT,
     letter: State.IN_IDENT,
+    escLetter: State.IN_IDENT,
     digit: State.IN_NUMBER,
-    hash: State.IN_COMMENT,
+    single: State.SINGLE,
+    star: State.SINGLE,
     eq: State.SAW_EQ,
     lt: State.SAW_LT,
     gt: State.SAW_GT,
     bang: State.SAW_BANG,
+    amp: State.SAW_AMP,
+    pipe: State.SAW_PIPE,
+    slash: State.SAW_SLASH,
+    quote: State.IN_STRING,
   },
-  [State.IN_IDENT]: {
-    letter: State.IN_IDENT,
-    digit: State.IN_IDENT,
-    epsilon: State.START,
-  },
-  [State.IN_NUMBER]: {
-    digit: State.IN_NUMBER,
-    epsilon: State.START,
-  },
-  [State.IN_COMMENT]: {
-    // stays in IN_COMMENT for everything except newline (handled in loop)
-  },
-  [State.SAW_EQ]: {
-    eq: State.START,     // consumes the 2nd '=' -> "==" accepted, restart
-    epsilon: State.START, // no '=' follows -> "=" accepted as ASSIGN, restart
-  },
-  [State.SAW_LT]: {
-    eq: State.START,     // "<="
-    epsilon: State.START, // "<"
-  },
-  [State.SAW_GT]: {
-    eq: State.START,     // ">="
-    epsilon: State.START, // ">"
-  },
-  [State.SAW_BANG]: {
-    eq: State.START,      // "!="
-    reject: State.DEAD,   // bare '!' has no valid token -> trap
-  },
+  [State.IN_WHITESPACE]: { whitespace: State.IN_WHITESPACE, newline: State.IN_WHITESPACE },
+  [State.IN_LINE_COMMENT]: allBut(State.IN_LINE_COMMENT, ["newline"]),
+  [State.IN_IDENT]: { letter: State.IN_IDENT, escLetter: State.IN_IDENT, digit: State.IN_IDENT },
+  [State.IN_NUMBER]: { digit: State.IN_NUMBER, letter: State.BAD_NUMBER, escLetter: State.BAD_NUMBER },
+  [State.BAD_NUMBER]: { letter: State.BAD_NUMBER, escLetter: State.BAD_NUMBER, digit: State.BAD_NUMBER },
+  [State.SAW_EQ]: { eq: State.SAW_EQ_EQ },
+  [State.SAW_LT]: { eq: State.SAW_LT_EQ },
+  [State.SAW_GT]: { eq: State.SAW_GT_EQ },
+  [State.SAW_BANG]: { eq: State.SAW_BANG_EQ },
+  [State.SAW_AMP]: { amp: State.SAW_AMP_AMP },
+  [State.SAW_PIPE]: { pipe: State.SAW_PIPE_PIPE },
+  [State.SAW_SLASH]: { star: State.IN_BLOCK_COMMENT },
+  [State.IN_BLOCK_COMMENT]: { ...allBut(State.IN_BLOCK_COMMENT, ["star"]), star: State.BLOCK_STAR },
+  [State.BLOCK_STAR]: { ...allBut(State.IN_BLOCK_COMMENT, ["star", "slash"]), star: State.BLOCK_STAR, slash: State.BLOCK_END },
+  [State.IN_STRING]: { ...allBut(State.IN_STRING, ["quote", "backslash", "newline"]), quote: State.STRING_END, backslash: State.STRING_ESC },
+  [State.STRING_ESC]: { escLetter: State.IN_STRING, quote: State.IN_STRING, backslash: State.IN_STRING },
+  [State.DEAD]: allBut(State.DEAD, []),
 };
 
-// Accepting states that resolve to a fixed token kind (multi-char, not
-// counting IN_IDENT/IN_NUMBER which need the lexeme itself to resolve).
-// SAW_EQ/SAW_LT/SAW_GT are accepting too — their epsilon edge emits a
-// token (ASSIGN/LT/GT, or EQ/LTE/GTE if a trailing '=' was also consumed)
-// exactly like IN_IDENT/IN_NUMBER do. Listed here so the graph draws them
-// double-circled; the mapped kind is just the bare (no trailing '=') case,
-// since this map only records that the state accepts, not every kind it
-// can resolve to.
-export const ACCEPTING: Partial<Record<State, TokenKind>> = {
-  [State.IN_IDENT]: TokenKind.IDENT,       // may be overridden by keyword lookup
-  [State.IN_NUMBER]: TokenKind.NUMBER,
-  [State.SAW_EQ]: TokenKind.ASSIGN,
-  [State.SAW_LT]: TokenKind.LT,
-  [State.SAW_GT]: TokenKind.GT,
+// The total transition function: exactly one next state for every
+// (state, class) pair — missing entries are the trap state.
+export function delta(state: State, cls: CharClass): State {
+  return TRANSITIONS[state]?.[cls] ?? State.DEAD;
+}
+
+// What the scanner does when a run backs up to an accepting state.
+export type AcceptAction =
+  | { emit: TokenKind | "byLexeme" | "identOrKeyword" }
+  | "discard"
+  | { error: string };
+
+// F, with each state's action. SAW_AMP / SAW_PIPE / IN_BLOCK_COMMENT /
+// IN_STRING etc. are deliberately absent: a lone `&`, an unclosed comment
+// or string is not a token, so a run ending there has nothing to back up to.
+export const ACCEPTING: Partial<Record<State, AcceptAction>> = {
+  [State.IN_WHITESPACE]: "discard",
+  [State.IN_LINE_COMMENT]: "discard",
+  [State.IN_IDENT]: { emit: "identOrKeyword" },
+  [State.IN_NUMBER]: { emit: TokenKind.NUMBER },
+  // Longer than the NUMBER prefix, so longest match prefers it: this is how
+  // lexer generators encode "reject this pattern" (a longer error rule wins).
+  [State.BAD_NUMBER]: { error: "invalid decimal literal" },
+  [State.SINGLE]: { emit: "byLexeme" },
+  [State.SAW_EQ]: { emit: TokenKind.ASSIGN },
+  [State.SAW_EQ_EQ]: { emit: TokenKind.EQ },
+  [State.SAW_LT]: { emit: TokenKind.LT },
+  [State.SAW_LT_EQ]: { emit: TokenKind.LTE },
+  [State.SAW_GT]: { emit: TokenKind.GT },
+  [State.SAW_GT_EQ]: { emit: TokenKind.GTE },
+  [State.SAW_BANG]: { emit: TokenKind.NOT },
+  [State.SAW_BANG_EQ]: { emit: TokenKind.NEQ },
+  [State.SAW_AMP_AMP]: { emit: TokenKind.AND },
+  [State.SAW_PIPE_PIPE]: { emit: TokenKind.OR },
+  [State.SAW_SLASH]: { emit: TokenKind.SLASH },
+  [State.BLOCK_END]: "discard",
+  [State.STRING_END]: { emit: TokenKind.STRING },
 };

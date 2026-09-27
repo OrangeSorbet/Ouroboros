@@ -13,3 +13,40 @@ html, body, #app {
   text-align: left !important;
   display: block !important;
 }
+
+/* PhaseFlowchart's snake layout: the bottom row runs right-to-left and the
+   turn runs downward, so the travelling dot needs those two directions too
+   (the left-to-right .phase-travel-dot lives in app.css). */
+@keyframes phase-travel-rev {
+  from { left: 100%; opacity: 1; }
+  to { left: 0; opacity: 0; }
+}
+@keyframes phase-travel-down {
+  from { top: 0; opacity: 1; }
+  to { top: 100%; opacity: 0; }
+}
+.phase-travel-dot-rev,
+.phase-travel-dot-down {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.phase-travel-dot-rev {
+  top: 50%;
+  transform: translateY(-50%);
+  animation: phase-travel-rev 900ms ease-out both;
+}
+.phase-travel-dot-down {
+  left: 50%;
+  transform: translateX(-50%);
+  animation: phase-travel-down 900ms ease-out both;
+}
+
+@keyframes intro-card-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.intro-card-in {
+  animation: intro-card-in 220ms ease-out both;
+}

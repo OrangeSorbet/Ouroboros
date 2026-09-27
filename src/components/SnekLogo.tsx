@@ -8,7 +8,7 @@ export function SnekLogo({ size = 28 }: SnekLogoProps) {
       src="/sneklogo.png"
       width={size}
       height={size}
-      alt="Snek logo"
+      alt="Ouroboros logo"
       style={{ display: "block", objectFit: "contain" }}
     />
   );

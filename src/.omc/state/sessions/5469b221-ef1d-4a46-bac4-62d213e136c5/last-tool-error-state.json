@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"cd /tmp; for m in dfa tree flow intro; do node /tmp/cdp.mjs \\\"http://localhost:5299/#$m\\\" \\\"C:/Users/ashvi/AppData/Local/Temp/elk_$m.png\\\" 5000 | grep -v \\\"vite\\\\|WURL\\\\|ELKOK\\\"; done\"}",
+  "error": "Exit code 1",
+  "timestamp": "2026-09-27T08:34:04.271Z",
+  "retry_count": 1
+}

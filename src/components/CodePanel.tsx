@@ -18,7 +18,9 @@ interface Segment {
   italic?: boolean;
 }
 
-const TOKEN_RE = /(#.*)|(\b(?:let|print|if|else|while|true|false)\b)|(\b\d+\b)|([a-zA-Z_]\w*)|(\s+)|([^\sA-Za-z0-9_]+)/g;
+// Comments (# line, /* */ within one line), keywords, numbers, names,
+// whitespace, strings, operators — in that priority order.
+const TOKEN_RE = /(#.*|\/\*.*?(?:\*\/|$))|(\b(?:let|print|if|else|while|for|fn|return|true|false)\b)|(\b\d+\b)|([a-zA-Z_]\w*)|(\s+)|("(?:[^"\\]|\\.)*"?)|([^\sA-Za-z0-9_"]+)/g;
 
 function highlightLine(line: string): Segment[] {
   const segments: Segment[] = [];
@@ -30,7 +32,8 @@ function highlightLine(line: string): Segment[] {
     else if (m[3] !== undefined) segments.push({ text: m[3], color: colors.codeNumber });
     else if (m[4] !== undefined) segments.push({ text: m[4], color: colors.codeForeground });
     else if (m[5] !== undefined) segments.push({ text: m[5], color: colors.codeForeground });
-    else if (m[6] !== undefined) segments.push({ text: m[6], color: colors.codeOperator });
+    else if (m[6] !== undefined) segments.push({ text: m[6], color: colors.codeString });
+    else if (m[7] !== undefined) segments.push({ text: m[7], color: colors.codeOperator });
   }
   return segments;
 }

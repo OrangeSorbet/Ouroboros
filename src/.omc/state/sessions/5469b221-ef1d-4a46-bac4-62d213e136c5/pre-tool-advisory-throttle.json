@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "entries": {
+    "79a93d4a2f8f50b95f852280616242fee1855dc99a3c75211917f55e72e95fae": {
+      "last_emitted_at_ms": 1790497949818,
+      "message": "Use parallel execution for independent tasks. Use run_in_background for long operations (npm install, builds, tests)."
+    },
+    "466399dafa2d20f60587180bad0a07358eb7f2bce724df0ff682f038ad33f5ad": {
+      "last_emitted_at_ms": 1790497897665,
+      "message": "Read multiple files in parallel when possible for faster analysis."
+    },
+    "445ed27a3872b681d98190bae61ccb84954e1bc4e140df5370be958dee776b3a": {
+      "last_emitted_at_ms": 1790497797423,
+      "message": "Verify changes work after editing. Test functionality before marking complete."
+    },
+    "a347e899c80a1e7a4582639070fc39d4b2b2f236e75a495c123d0bc8d6a5833b": {
+      "last_emitted_at_ms": 1790497329833,
+      "message": "Spawning agent: general-purpose (inherit) | Task: UI shell build"
+    },
+    "496bc4368ba8447ee8f61736e98566274113941c7968f55e0d7b82567f3b72de": {
+      "last_emitted_at_ms": 1790497308165,
+      "message": "Spawning agent: general-purpose (inherit) | Task: Bytecode + VM phases 6-7"
+    },
+    "6c362fd7576e797705e85ac65ee128596f7c32d901a488c218bb71ef34647a15": {
+      "last_emitted_at_ms": 1790497291060,
+      "message": "Spawning agent: general-purpose (inherit) | Task: IR + optimizer phases 4-5"
+    },
+    "695603829ced242f2b70ba8d121786371479afb2d440bbb9ed399dc1294220f1": {
+      "last_emitted_at_ms": 1790497270339,
+      "message": "Spawning agent: general-purpose (inherit) | Task: Semantic phase 3 build"
+    },
+    "1e93f20bf2e001cadf5b5b81b41a02d258e267c72a5879a24d2ca6bbc6536fd6": {
+      "last_emitted_at_ms": 1790497255397,
+      "message": "Spawning agent: general-purpose (inherit) | Task: Parser phase 2 build"
+    },
+    "fb0ae9b7b00050a725354c4c81aff2f4250a7f2a7e1e76845e331aceefa7df85": {
+      "last_emitted_at_ms": 1790497238695,
+      "message": "Spawning agent: general-purpose (inherit) | Task: Lexer phase 1 build"
+    }
+  },
+  "updated_at": "2026-09-27T08:32:29.818Z"
+}

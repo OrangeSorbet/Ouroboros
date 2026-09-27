@@ -2,8 +2,9 @@ import { useRef, useState } from "preact/hooks";
 import type { ComponentChildren } from "preact";
 import { colors } from "../styles/colors";
 import { fonts } from "../styles/fonts";
-import { StepSlider } from "./StepSlider";
-import type { Chapter } from "../compiler/steps";
+import { StepSlider, STEP_SLIDER_HEIGHT } from "./StepSlider";
+import { ExplanationGrid, EXPLANATION_GRID_HEIGHT } from "./ExplanationGrid";
+import type { Chapter, Explanation } from "../compiler/trace";
 
 interface ScrubberProps {
   index: number;
@@ -14,9 +15,17 @@ interface ScrubberProps {
   onTogglePlay: () => void;
   speed: number; // 0 = manual, 1 = fastest (~3 steps/sec)
   onSpeedChange: (speed: number) => void;
-  description: ComponentChildren;
+  explain?: Explanation;           // current step's 2×2 explanation
+  description?: ComponentChildren; // fallback shown when there is no explain (empty states)
   meta?: ComponentChildren;
 }
+
+const CONTROLS_HEIGHT = 26;
+const ROW_GAP = 6;
+// Exact rendered height of <Scrubber> (content box, excluding whatever
+// padding the caller wraps it in) — fixed so the view box above can be
+// sized once instead of measured.
+export const SCRUBBER_HEIGHT = CONTROLS_HEIGHT + ROW_GAP + EXPLANATION_GRID_HEIGHT + ROW_GAP + STEP_SLIDER_HEIGHT;
 
 const iconButtonStyle = {
   background: "transparent",
@@ -142,9 +151,9 @@ function SpeedControl({ speed, onChange }: { speed: number; onChange: (v: number
   );
 }
 
-// Reusable playback control shared by every phase's detail view (lex,
-// parse, and whatever comes later): play/pause, step back/forward, a
-// step counter, a collapsible speed dial, and the scrub track itself.
+// Reusable playback control shared by every phase's detail view: play/pause,
+// step back/forward, a step counter, a collapsible speed dial, the 2×2
+// explanation grid for the current step, and the scrub track itself.
 export function Scrubber({
   index,
   total,
@@ -154,14 +163,15 @@ export function Scrubber({
   onTogglePlay,
   speed,
   onSpeedChange,
+  explain,
   description,
   meta,
 }: ScrubberProps) {
   const hasSteps = total > 0;
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+    <div style={{ height: SCRUBBER_HEIGHT, display: "flex", flexDirection: "column", gap: ROW_GAP }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, height: CONTROLS_HEIGHT, flexShrink: 0 }}>
         <button onClick={() => hasSteps && onTogglePlay()} disabled={!hasSteps} style={iconButtonStyle}>
           <Icon name={playing ? "pause" : "play"} />
         </button>
@@ -190,9 +200,13 @@ export function Scrubber({
         )}
       </div>
 
-      <div key={index} className="step-fade-in" style={{ color: colors.textPrimary, fontSize: 14, marginBottom: 6, minHeight: 20 }}>
-        {description}
-      </div>
+      {explain ? (
+        <ExplanationGrid explain={explain} />
+      ) : (
+        <div style={{ height: EXPLANATION_GRID_HEIGHT, display: "flex", alignItems: "center", color: colors.textSecondary, fontSize: 13 }}>
+          {description}
+        </div>
+      )}
 
       <StepSlider
         total={Math.max(total, 1)}

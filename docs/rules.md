@@ -1,4 +1,4 @@
-# Working Rules for Snek
+# Working Rules for Ouroboros
 
 Rules for whoever (human or agent) works on this repo. Canonical location —
 `tooldata/rules.md` is superseded by this file; don't read `tooldata/` at all.
@@ -12,6 +12,9 @@ Rules for whoever (human or agent) works on this repo. Canonical location —
   `checkout`, nothing. All code changes stay as local, uncommitted file
   edits. If version control is ever wanted, that's a separate explicit
   request, not something to set up proactively.
+- **Never touch npm, no matter what.** No `npm`/`npx` execution of any kind
+  (no `install`, `run`, `exec`, `ci`, `update`, nothing). If a dependency
+  needs installing, say so and let the user run it themselves.
 
 ## Pedagogy
 
@@ -49,8 +52,10 @@ ToC *by building it* — not just shipping a working app. That changes what
   multiple ways (e.g. "fix the graph" — which graph, what's actually wrong),
   clarify before touching files. Small, unambiguous fixes don't need this.
 - **Verify before claiming done.** Every change gets checked with
-  `npx tsc -b --force` then `npx vite build` before reporting success. If
-  either fails, fix it before saying the task is complete.
+  `node node_modules/typescript/bin/tsc -b --force` then
+  `node node_modules/vite/bin/vite.js build` before reporting success
+  (called through `node` directly — never via `npm`/`npx`, see Off-limits).
+  If either fails, fix it before saying the task is complete.
 - **No deviation from `docs/checklist.md`'s roadmap order** unless the user
   explicitly redirects.
 - **No placeholder/dummy code, no unresolved TODOs** left in committed
@@ -62,5 +67,8 @@ ToC *by building it* — not just shipping a working app. That changes what
   in their own file. `app.tsx` only imports and composes — no inline
   styling helpers, no inline component definitions.
 - Compiler logic (`src/compiler/`) stays free of UI prose — all
-  human-readable text lives in `src/compiler/messages.ts`, not scattered
-  across `dfa.ts`/`lexer.ts`/`parser.ts`/`steps.ts`.
+  human-readable text lives under `src/compiler/messages/` (one file per
+  phase, plus shared glossary/intro-card files), not scattered across
+  `dfa.ts`/`lexer.ts`/`parser.ts`/`steps.ts`. When splitting the old
+  single `messages.ts`, existing text is moved verbatim (copied, not
+  rewritten); only new text is newly written.

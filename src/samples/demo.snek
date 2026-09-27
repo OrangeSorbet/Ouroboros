@@ -1,0 +1,16 @@
+# demo.snek
+fn square(n) {
+  return n * n;
+}
+let limit = 1 + 2;          /* folded to 3 in Phase 5 */
+let total = 0;
+for (let i = 0; i < limit; i = i + 1) {
+  total = total + square(i);
+}
+let names = ["lo", "hi"];
+if (total > 4 && !false) {
+  print names[1];
+} else {
+  print total;
+}
+if (false) { print "never"; }   # removed as dead code

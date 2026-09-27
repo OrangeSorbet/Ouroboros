@@ -1,7 +1,11 @@
 import { useRef, useState } from "preact/hooks";
 import { colors } from "../styles/colors";
 import { fonts } from "../styles/fonts";
-import type { Chapter } from "../compiler/steps";
+import type { Chapter } from "../compiler/trace";
+
+const TOP_PAD = 12;
+// Track + padding; the chapter tooltip floats above into the grid area.
+export const STEP_SLIDER_HEIGHT = TOP_PAD + 6;
 
 interface StepSliderProps {
   total: number;
@@ -47,7 +51,7 @@ export function StepSlider({ total, current, chapters, onSeek }: StepSliderProps
 
   return (
     <div
-      style={{ position: "relative", width: "100%", paddingTop: 28 }}
+      style={{ position: "relative", width: "100%", height: STEP_SLIDER_HEIGHT, paddingTop: TOP_PAD, flexShrink: 0 }}
       onPointerMove={(e: any) => { handleMove(e); handleDrag(e); }}
       onPointerLeave={() => { setHoverX(null); setHoverChapter(null); }}
     >
@@ -55,7 +59,7 @@ export function StepSlider({ total, current, chapters, onSeek }: StepSliderProps
         <div
           style={{
             position: "absolute",
-            top: 0,
+            bottom: STEP_SLIDER_HEIGHT - TOP_PAD + 4,
             left: hoverX - trackLeft,
             transform: "translateX(-50%)",
             background: colors.panelBackground,
@@ -67,6 +71,7 @@ export function StepSlider({ total, current, chapters, onSeek }: StepSliderProps
             color: colors.textPrimary,
             whiteSpace: "nowrap",
             pointerEvents: "none",
+            zIndex: 1,
           }}
         >
           {hoverChapter.label}

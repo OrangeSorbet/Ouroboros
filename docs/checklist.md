@@ -1,4 +1,4 @@
-# Snek Project Checklist
+# Ouroboros Project Checklist
 
 Mirror of `tooldata/checklist.json`. Update JSON via tool; re-sync this file after.
 
@@ -75,6 +75,66 @@ Zoomable cinematic view: major compiler phases (Tokenize -> Parse -> AST->instr 
 - [x] Build Phase2 (Syntax Analysis) PDA view — split into a theoretical pane (`PdaGraph`, an actual 15-state PDA call graph, + `PdaTransitionTable`) and a technical pane (`PdaStackView` + `ParserTokenPanel`)
 - [x] Build PhaseMinimap.tsx (persistent widget, bottom-right, above scrubber)
 - [x] Sync minimap highlight with active phase + completion checkmarks
+
+## Phase 7: PPT Content (moved ahead by user request)
+Slide content, visual identity, and generation prompt for classmates — see `docs/ppt.md`. Screenshots are captured last (Phase 5 above / Phase 16 below).
+
+- [x] Write `docs/ppt.md` (slides, speaker notes, colours/fonts, Canva route, Claude prompt, screenshot list, viva Q&A)
+
+## Phase 8: Docs Sync for the Extended Language
+See `docs/phase34plan.md` §17 step 1.
+
+- [x] Update `docs/snek-grammar.md` to the extended EBNF + pure BNF (§7.3–7.4)
+- [x] Fix stale paths in `docs/compiler-phases.md`
+
+## Phase 9: Global UI Shell
+See `docs/phase34plan.md` §6.
+
+- [x] Split `src/compiler/messages.ts` into `src/compiler/messages/` (existing text moved verbatim)
+- [x] 2×2 explanation grid in the scrubber (What / Why / Formal / Next)
+- [x] Per-phase intro cards (dismissible)
+- [x] Glossary hovers for ToC terms
+- [x] elkjs layout helper (user installs elkjs — no npm by agent)
+- [x] 7-box flowchart + error-blocked phase states
+
+## Phase 10: Lexer Fixes + Extended Tokens (compiler Phase 1)
+See `docs/phase34plan.md` §3 (Phase 1 audit), §7.1–7.2, §8.
+
+- [x] New DFA state set, δ without ε, total δ via DEAD
+- [x] Longest-match driver with step kinds (move / no-move / accept / keyword-check / error / eof)
+- [x] `BAD_NUMBER` error, block-comment commit rule, strings, `&& || !`, new tokens
+- [x] Keep lex-error partial trace playable
+- [x] UI: input tape, full δ table (fix highlight bug), 5-tuple panel, elkjs DFA graph
+
+## Phase 11: Parser Rework (compiler Phase 2)
+See `docs/phase34plan.md` §3 (Phase 2 audit), §9.
+
+- [x] `grammar.ts` (pure BNF as data), `ll1.ts` (FIRST/FOLLOW/table, conflict check)
+- [x] Table-driven LL(1) PDA with parse tree; AST builder (left-assoc fold)
+- [x] Derived call graph; EOF match + empty-stack acceptance; parse-error replay with expected set
+- [x] UI: derivation strip, tabs (Parse tree/AST, LL(1) table, Call graph, Grammar), PDA configuration column
+
+## Phase 12: Semantic Analysis (compiler Phase 3)
+- [x] Hoist pass + scope-stack walk, type rules, slots, errors (§10)
+- [x] UI: AST with type badges, symbol-table stack
+
+## Phase 13: AST → Instructions (compiler Phase 4)
+- [x] Instruction set, translation rules, `for` desugar, backpatching (§11)
+- [x] UI: post-order walk, split code → IR panel conversion
+
+## Phase 14: Control-Flow Graph + Optimize (compiler Phase 5)
+- [x] Leaders, basic blocks, edges; folding, propagation, branch folding, DCE, peephole to fixpoint (§12)
+- [x] UI: block graph with diffs; Rice's theorem panel
+
+## Phase 15: Bytecode Emission (compiler Phase 6)
+- [x] Assembly (relative jumps, 2-byte wordcode, EXTENDED_ARG), code objects, line table (§13)
+- [x] UI: tables + `dis` view with hex
+
+## Phase 16: Execution VM (compiler Phase 7) + Delivery
+- [x] Fetch–decode–execute VM, runtime errors, step/frame caps (§14)
+- [x] UI: stacks, locals, console, PC highlight
+- [ ] `demo.snek` + error demos; timing rehearsal (§15)
+- [ ] Capture screenshots S1–S11 (`docs/ppt.md` §5), then build the deck
 
 ---
 

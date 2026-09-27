@@ -1,348 +1,175 @@
-import type { Token } from "./tokens";
-import { TokenKind } from "./tokens";
-import type {
-  Program, Stmt, Expr, Block,
-  LetStmt, AssignStmt, PrintStmt, IfStmt, WhileStmt, ExprStmt,
-} from "./ast";
+// The syntax phase as a textbook deterministic PDA (CFG → PDA construction,
+// Sipser §2.2), driven by the LL(1) table from ll1.ts. It has a single state;
+// everything happens on the stack, which holds grammar symbols still
+// *expected*. Two moves:
+//   expand — top is a non-terminal A: pop it, push the right-hand side of
+//            M[A, lookahead] reversed (so its first symbol is on top);
+//   match  — top is a terminal equal to the lookahead: pop it, advance input.
+// The stack starts as [Program]. There is no separate `$` bottom marker:
+// Program → DeclList EOF matches the EOF token explicitly, so acceptance is
+// by empty stack once EOF is matched (input fully read and stack empty).
+//
+// This replaces the old hand-written recursive descent: one table-driven PDA
+// is the only engine, and the parse tree, AST, call graph and derivation
+// strip are all derived from its trace, so no two views can disagree.
+import type { Token } from "./tokens.ts";
+import type { Chapter, PhaseResult, Span, TraceStep } from "./trace.ts";
+import type { Program } from "./ast.ts";
+import { PRODUCTIONS, START_SYMBOL, isNonTerminal, isHelper } from "./grammar.ts";
+import { TABLE, expectedFor } from "./ll1.ts";
+import { buildAst } from "./astBuilder.ts";
+import { explainParse, parseChapterLabel, parseErrorMessage, EMPTY_PROGRAM_CHAPTER } from "./messages/parse.ts";
 
-// The parser is a recursive-descent implementation of the CFG in
-// snek-grammar.md — one function per non-terminal. It behaves like a
-// PDA: entering a non-terminal's function is a PUSH of that symbol
-// onto the parse stack, returning from it is a POP. We track that
-// stack explicitly (rather than relying on the JS call stack alone)
-// so Phase 3/4 can animate it exactly like the DFA trace.
+export type PdaMove = "expand" | "match" | "accept" | "error";
 
-export type PdaAction = "push" | "pop" | "consume";
-
-export interface PdaStep {
-  action: PdaAction;
-  symbol: string;      // the non-terminal being entered/exited, or (for
-                        // "consume") the rule that matched the terminal
-  stackAfter: string[]; // full stack snapshot after this step
-  tokenLexeme: string;  // the token being looked at when this happened
-  tokenKind: TokenKind; // that token's kind
-  tokenIndex: number;   // index of that token in the full token array
-  line: number;
+export interface ParseNode {
+  id: number;           // creation order, 0 = root
+  symbol: string;       // grammar symbol, or "ε" for an empty-production leaf
+  children: ParseNode[];
+  token?: Token;        // terminals, once matched
+  productionId?: number; // non-terminals, once expanded
+  helper: boolean;      // symbol is an EBNF→BNF helper (views dim these)
+  createdAt: number;    // trace index of the expand that created this node
+  doneAt?: number;      // trace index where it was expanded / matched
 }
 
-export class ParseError extends Error {
-  line: number;
-  constructor(message: string, line: number) {
-    super(message);
-    this.line = line;
-  }
+export interface ParseOutput {
+  tree: ParseNode;
+  ast: Program;
 }
 
-export class Parser {
-  private pos = 0;
-  private stack: string[] = [];
-  private tokens: Token[];
-  public trace: PdaStep[] = [];
+export interface PdaStep extends TraceStep {
+  move: PdaMove;
+  top: string;           // symbol the move acted on ("" for accept)
+  production?: number;   // expand: id of the production M[top, lookahead]
+  stackAfter: string[];  // bottom … top (top = last element)
+  inputPos: number;      // index of `lookahead` in the token array
+  lookahead: Token;
+  treeNodeId?: number;   // parse-tree node expanded / matched / failed on
+  matched: string[];     // lexemes matched so far (derivation strip)
+  expected?: string[];   // error: the terminals that would have been legal
+  tree: ParseNode;       // root of the parse tree (shared, grows over the trace;
+                         // use createdAt/doneAt to render it as of this step)
+}
 
-  constructor(tokens: Token[]) {
-    this.tokens = tokens;
-  }
+interface StackEntry {
+  node: ParseNode;
+  parent?: ParseNode;
+}
 
-  private peek(): Token {
-    return this.tokens[this.pos];
-  }
+const tokenSpan = (t: Token): Span => ({ line: t.line, col: t.col, endLine: t.line, endCol: t.endCol });
 
-  private advance(): Token {
-    const t = this.tokens[this.pos];
-    if (this.pos < this.tokens.length - 1) this.pos++;
-    return t;
-  }
+export function parse(tokens: Token[]): PhaseResult<PdaStep, ParseOutput> {
+  // The lexer always ends with EOF; guard anyway so parse() never throws.
+  const toks: Token[] = tokens.length && tokens[tokens.length - 1].kind === "EOF"
+    ? tokens
+    : [...tokens, { kind: "EOF", lexeme: "", line: tokens.at(-1)?.line ?? 1, col: (tokens.at(-1)?.endCol ?? 0) + 1, endCol: (tokens.at(-1)?.endCol ?? 0) + 1 }];
 
-  private check(kind: TokenKind): boolean {
-    return this.peek().kind === kind;
-  }
+  const trace: PdaStep[] = [];
+  let nextId = 0;
+  const mkNode = (symbol: string): ParseNode => ({
+    id: nextId++,
+    symbol,
+    children: [],
+    helper: isNonTerminal(symbol) && isHelper(symbol),
+    createdAt: trace.length,
+  });
 
-  // Every terminal token consumed gets its own trace step — without this,
-  // tokens consumed outside enter()/exit() never appeared in the trace at
-  // all: the code-pane highlight, token list, and description would
-  // silently skip them since no PdaStep's tokenIndex ever pointed at them.
-  private traceConsume(context: string) {
-    const tok = this.peek();
-    this.trace.push({
-      action: "consume",
-      symbol: this.stack[this.stack.length - 1] ?? context,
-      stackAfter: [...this.stack],
-      tokenLexeme: tok.lexeme,
-      tokenKind: tok.kind,
-      tokenIndex: this.pos,
-      line: tok.line,
+  const root = mkNode(START_SYMBOL);
+  const stack: StackEntry[] = [{ node: root }];
+  const matched: string[] = [];
+  const declStarts: { step: number; pos: number }[] = [];
+  let pos = 0;
+  const la = () => toks[Math.min(pos, toks.length - 1)];
+
+  const record = (step: Omit<PdaStep, "stackAfter" | "matched" | "tree" | "span" | "explain" | "lookahead" | "inputPos">,
+                  lookahead: Token, inputPos: number, parent?: ParseNode) => {
+    const top = stack.at(-1)?.node.symbol;
+    trace.push({
+      ...step,
+      stackAfter: stack.map((e) => e.node.symbol),
+      inputPos,
+      lookahead,
+      matched: [...matched],
+      tree: root,
+      span: tokenSpan(lookahead),
+      explain: explainParse({
+        move: step.move,
+        top: step.top,
+        production: step.production === undefined ? undefined : PRODUCTIONS[step.production],
+        lookahead,
+        nextLookahead: la(),
+        newTop: top,
+        parent: parent && { symbol: parent.symbol, production: parent.productionId === undefined ? undefined : PRODUCTIONS[parent.productionId] },
+        expected: step.expected,
+      }),
     });
-  }
+  };
 
-  // For tokens whose kind still needs checking (the grammar requires
-  // exactly this one here, or it's a syntax error).
-  private expect(kind: TokenKind, context: string): Token {
-    if (!this.check(kind)) {
-      throw new ParseError(
-        `Expected ${kind} while parsing ${context}, got ${this.peek().kind} ('${this.peek().lexeme}')`,
-        this.peek().line
-      );
+  let error: { message: string; span: Span } | undefined;
+  for (;;) {
+    const lookahead = la();
+    const inputPos = pos;
+    const entry = stack.at(-1);
+
+    if (!entry) {
+      record({ move: "accept", top: "", treeNodeId: root.id }, lookahead, inputPos);
+      break;
     }
-    this.traceConsume(context);
-    return this.advance();
-  }
 
-  // For tokens a caller has already confirmed via check()/peek() (an
-  // operator inside a while-loop condition, a literal branch in
-  // parsePrimary's switch) — still traced, just without a redundant
-  // re-check of the kind.
-  private consumeToken(context: string): Token {
-    this.traceConsume(context);
-    return this.advance();
-  }
+    const { node, parent } = entry;
+    const X = node.symbol;
 
-  // push/pop wrap every non-terminal function so the stack trace is
-  // impossible to forget when adding a new production later.
-  private enter(symbol: string) {
-    this.stack.push(symbol);
-    this.trace.push({
-      action: "push",
-      symbol,
-      stackAfter: [...this.stack],
-      tokenLexeme: this.peek().lexeme,
-      tokenKind: this.peek().kind,
-      tokenIndex: this.pos,
-      line: this.peek().line,
-    });
-  }
-
-  private exit(symbol: string) {
-    this.stack.pop();
-    this.trace.push({
-      action: "pop",
-      symbol,
-      stackAfter: [...this.stack],
-      tokenLexeme: this.peek().lexeme,
-      tokenKind: this.peek().kind,
-      tokenIndex: this.pos,
-      line: this.peek().line,
-    });
-  }
-
-  parseProgram(): Program {
-    this.enter("Program");
-    const statements: Stmt[] = [];
-    while (!this.check(TokenKind.EOF)) {
-      statements.push(this.parseStatement());
-    }
-    this.exit("Program");
-    return { kind: "Program", statements };
-  }
-
-  private parseStatement(): Stmt {
-    this.enter("Statement");
-    let stmt: Stmt;
-    switch (this.peek().kind) {
-      case TokenKind.LET: stmt = this.parseLetStmt(); break;
-      case TokenKind.PRINT: stmt = this.parsePrintStmt(); break;
-      case TokenKind.IF: stmt = this.parseIfStmt(); break;
-      case TokenKind.WHILE: stmt = this.parseWhileStmt(); break;
-      case TokenKind.LBRACE: stmt = this.parseBlock(); break;
-      case TokenKind.IDENT:
-        // Two IDENT-led productions share this lookahead: `IDENT =` is an
-        // AssignStmt, anything else (IDENT used inside a larger expression,
-        // e.g. a bare `x;`) falls through to ExprStmt.
-        stmt = this.tokens[this.pos + 1]?.kind === TokenKind.ASSIGN
-          ? this.parseAssignStmt()
-          : this.parseExprStmt();
+    if (!isNonTerminal(X)) {
+      if (X !== lookahead.kind) {
+        const expected = [X];
+        record({ move: "error", top: X, treeNodeId: node.id, expected }, lookahead, inputPos, parent);
+        error = { message: parseErrorMessage(lookahead, expected), span: tokenSpan(lookahead) };
         break;
-      default: stmt = this.parseExprStmt();
+      }
+      stack.pop();
+      node.token = lookahead;
+      node.doneAt = trace.length;
+      matched.push(lookahead.kind === "EOF" ? "EOF" : lookahead.lexeme);
+      pos++;
+      record({ move: "match", top: X, treeNodeId: node.id }, lookahead, inputPos, parent);
+      continue;
     }
-    this.exit("Statement");
-    return stmt;
-  }
 
-  private parseLetStmt(): LetStmt {
-    this.enter("LetStmt");
-    this.expect(TokenKind.LET, "LetStmt");
-    const name = this.expect(TokenKind.IDENT, "LetStmt").lexeme;
-    this.expect(TokenKind.ASSIGN, "LetStmt");
-    const value = this.parseExpr();
-    this.expect(TokenKind.SEMI, "LetStmt");
-    this.exit("LetStmt");
-    return { kind: "LetStmt", name, value };
-  }
-
-  private parseAssignStmt(): AssignStmt {
-    this.enter("AssignStmt");
-    const name = this.expect(TokenKind.IDENT, "AssignStmt").lexeme;
-    this.expect(TokenKind.ASSIGN, "AssignStmt");
-    const value = this.parseExpr();
-    this.expect(TokenKind.SEMI, "AssignStmt");
-    this.exit("AssignStmt");
-    return { kind: "AssignStmt", name, value };
-  }
-
-  private parsePrintStmt(): PrintStmt {
-    this.enter("PrintStmt");
-    this.expect(TokenKind.PRINT, "PrintStmt");
-    const value = this.parseExpr();
-    this.expect(TokenKind.SEMI, "PrintStmt");
-    this.exit("PrintStmt");
-    return { kind: "PrintStmt", value };
-  }
-
-  private parseIfStmt(): IfStmt {
-    this.enter("IfStmt");
-    this.expect(TokenKind.IF, "IfStmt");
-    this.expect(TokenKind.LPAREN, "IfStmt");
-    const condition = this.parseExpr();
-    this.expect(TokenKind.RPAREN, "IfStmt");
-    const thenBranch = this.parseBlock();
-    let elseBranch: Block | null = null;
-    if (this.check(TokenKind.ELSE)) {
-      this.consumeToken("IfStmt");
-      elseBranch = this.parseBlock();
+    const pid = TABLE[X][lookahead.kind];
+    if (pid === undefined) {
+      const expected = expectedFor(X);
+      record({ move: "error", top: X, treeNodeId: node.id, expected }, lookahead, inputPos, parent);
+      error = { message: parseErrorMessage(lookahead, expected), span: tokenSpan(lookahead) };
+      break;
     }
-    this.exit("IfStmt");
-    return { kind: "IfStmt", condition, thenBranch, elseBranch };
-  }
 
-  private parseWhileStmt(): WhileStmt {
-    this.enter("WhileStmt");
-    this.expect(TokenKind.WHILE, "WhileStmt");
-    this.expect(TokenKind.LPAREN, "WhileStmt");
-    const condition = this.parseExpr();
-    this.expect(TokenKind.RPAREN, "WhileStmt");
-    const body = this.parseBlock();
-    this.exit("WhileStmt");
-    return { kind: "WhileStmt", condition, body };
-  }
-
-  private parseBlock(): Block {
-    this.enter("Block");
-    this.expect(TokenKind.LBRACE, "Block");
-    const statements: Stmt[] = [];
-    while (!this.check(TokenKind.RBRACE)) {
-      statements.push(this.parseStatement());
-    }
-    this.expect(TokenKind.RBRACE, "Block");
-    this.exit("Block");
-    return { kind: "Block", statements };
-  }
-
-  private parseExprStmt(): ExprStmt {
-    this.enter("ExprStmt");
-    const expr = this.parseExpr();
-    this.expect(TokenKind.SEMI, "ExprStmt");
-    this.exit("ExprStmt");
-    return { kind: "ExprStmt", expr };
-  }
-
-  // --- expression grammar, precedence climbing, one fn per level ---
-
-  private parseExpr(): Expr {
-    return this.parseEquality();
-  }
-
-  private parseEquality(): Expr {
-    this.enter("Equality");
-    let left = this.parseComparison();
-    while (this.check(TokenKind.EQ) || this.check(TokenKind.NEQ)) {
-      const op = this.consumeToken("Equality").kind === TokenKind.EQ ? "==" : "!=";
-      const right = this.parseComparison();
-      left = { kind: "BinaryExpr", operator: op, left, right };
-    }
-    this.exit("Equality");
-    return left;
-  }
-
-  private parseComparison(): Expr {
-    this.enter("Comparison");
-    let left = this.parseAdditive();
-    const comparisonOps: TokenKind[] = [TokenKind.LT, TokenKind.GT, TokenKind.LTE, TokenKind.GTE];
-    while (comparisonOps.includes(this.peek().kind)) {
-      const opTok = this.consumeToken("Comparison");
-      const op = opTok.kind === TokenKind.LT ? "<"
-        : opTok.kind === TokenKind.GT ? ">"
-        : opTok.kind === TokenKind.LTE ? "<="
-        : ">=";
-      const right = this.parseAdditive();
-      left = { kind: "BinaryExpr", operator: op, left, right };
-    }
-    this.exit("Comparison");
-    return left;
-  }
-
-  private parseAdditive(): Expr {
-    this.enter("Additive");
-    let left = this.parseMultiplicative();
-    while (this.check(TokenKind.PLUS) || this.check(TokenKind.MINUS)) {
-      const op = this.consumeToken("Additive").kind === TokenKind.PLUS ? "+" : "-";
-      const right = this.parseMultiplicative();
-      left = { kind: "BinaryExpr", operator: op, left, right };
-    }
-    this.exit("Additive");
-    return left;
-  }
-
-  private parseMultiplicative(): Expr {
-    this.enter("Multiplicative");
-    let left = this.parseUnary();
-    while (this.check(TokenKind.STAR) || this.check(TokenKind.SLASH)) {
-      const op = this.consumeToken("Multiplicative").kind === TokenKind.STAR ? "*" : "/";
-      const right = this.parseUnary();
-      left = { kind: "BinaryExpr", operator: op, left, right };
-    }
-    this.exit("Multiplicative");
-    return left;
-  }
-
-  private parseUnary(): Expr {
-    this.enter("Unary");
-    let result: Expr;
-    if (this.check(TokenKind.MINUS)) {
-      this.consumeToken("Unary");
-      const operand = this.parseUnary();
-      result = { kind: "UnaryExpr", operator: "-", operand };
+    const p = PRODUCTIONS[pid];
+    stack.pop();
+    node.productionId = pid;
+    node.doneAt = trace.length;
+    const kids = p.rhs.map(mkNode);
+    if (kids.length) {
+      node.children = kids;
     } else {
-      result = this.parsePrimary();
+      // ε leaf: the tree shows that this non-terminal derived the empty string.
+      const eps = mkNode("ε");
+      eps.doneAt = trace.length;
+      node.children = [eps];
     }
-    this.exit("Unary");
-    return result;
+    for (let i = kids.length - 1; i >= 0; i--) stack.push({ node: kids[i], parent: node });
+    // Decl is only derivable from DeclList, so every Decl is a top-level item.
+    if (X === "Decl") declStarts.push({ step: trace.length, pos });
+    record({ move: "expand", top: X, production: pid, treeNodeId: node.id }, lookahead, inputPos, parent);
   }
 
-  private parsePrimary(): Expr {
-    this.enter("Primary");
-    const tok = this.peek();
-    let result: Expr;
-    switch (tok.kind) {
-      case TokenKind.NUMBER:
-        this.consumeToken("Primary");
-        result = { kind: "NumberLiteral", value: Number(tok.lexeme) };
-        break;
-      case TokenKind.IDENT:
-        this.consumeToken("Primary");
-        result = { kind: "Identifier", name: tok.lexeme };
-        break;
-      case TokenKind.TRUE:
-        this.consumeToken("Primary");
-        result = { kind: "BoolLiteral", value: true };
-        break;
-      case TokenKind.FALSE:
-        this.consumeToken("Primary");
-        result = { kind: "BoolLiteral", value: false };
-        break;
-      case TokenKind.LPAREN:
-        this.consumeToken("Primary");
-        result = this.parseExpr();
-        this.expect(TokenKind.RPAREN, "Primary");
-        break;
-      default:
-        throw new ParseError(`Unexpected token '${tok.lexeme}' in expression`, tok.line);
-    }
-    this.exit("Primary");
-    return result;
-  }
-}
+  const chapters: Chapter[] = declStarts.map((d, i) => ({
+    start: i === 0 ? 0 : d.step,
+    end: i + 1 < declStarts.length ? declStarts[i + 1].step - 1 : trace.length - 1,
+    label: parseChapterLabel(toks, d.pos),
+  }));
+  if (!chapters.length) chapters.push({ start: 0, end: trace.length - 1, label: EMPTY_PROGRAM_CHAPTER });
 
-export function parse(tokens: Token[]): { program: Program; trace: PdaStep[] } {
-  const parser = new Parser(tokens);
-  const program = parser.parseProgram();
-  return { program, trace: parser.trace };
+  if (error) return { ok: false, trace, chapters, error };
+  return { ok: true, trace, chapters, output: { tree: root, ast: buildAst(root) } };
 }
