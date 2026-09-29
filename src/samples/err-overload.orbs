@@ -1,0 +1,4 @@
+# err-overload.orbs — overloads must differ in parameter count
+fn add(a, b) { return a + b; }
+fn add(x, y) { return x * y; }
+print add(1, 2);

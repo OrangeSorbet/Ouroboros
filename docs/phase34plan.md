@@ -34,7 +34,7 @@ says **"Control-Flow Graph"**.
 
 Chomsky hierarchy, bottom to top, and where each phase sits:
 
-| Language class | Machine | Snek phase | What it can't do (forces the next phase) |
+| Language class | Machine | Ouroboros phase | What it can't do (forces the next phase) |
 |---|---|---|---|
 | Regular | DFA | 1 Lexing | Can't match nested brackets `(( ))` — needs memory of unbounded depth |
 | Context-free | PDA (one stack) | 2 Parsing | Can't check "declared before use" or types — that's like `{ w c w }`, which is **not** context-free (pumping lemma) |
@@ -68,7 +68,7 @@ Each item is fixed by the plan in §8 / §9.
 1. The **15-state "PDA" graph is a call graph** (formally a recursive transition network), not the textbook PDA — unexplained.
 2. **Missing `Unary → Unary` edge** in `PDA_EDGES` although `Unary -> "-" Unary` exists.
 3. **`Expr` never pushed** — the trace skips a grammar symbol.
-4. **`docs/snek-grammar.md` omits `Block` from `Statement`** (parser and `messages.ts` include it).
+4. **`docs/ouroboros-grammar.md` omits `Block` from `Statement`** (parser and `messages.ts` include it).
 5. Grammar is **EBNF** (`*`, `?`), not pure CFG notation; **EOF never consumed/traced**.
 6. **False narration:** "AssignStmt IDENT already confirmed to exist" — nothing checks that (and it *can't* be checked by a CFG).
 7. **AST built and thrown away** — no parse tree or derivation shown.
@@ -200,7 +200,7 @@ Each item is fixed by the plan in §8 / §9.
 
 | # | Question | Answer | Decision |
 |---|---|---|---|
-| 62 | Extend Snek? | yes, all | Strings, `for`, functions, arrays, `&& \|\| !`, `/* */` comments (§7) |
+| 62 | Extend Ouroboros? | yes, all | Strings, `for`, functions, arrays, `&& \|\| !`, `/* */` comments (§7) |
 | 63 | Number semantics? | explained (§5.17) → ★ | Unbounded integers (`BigInt`), `/` truncates toward zero, divide-by-zero = runtime error, never constant-folded |
 | 64 | Scrubber chapters for later phases | per statement | Phases 2–7 chaptered per top-level statement (and per function); Phase 1 stays per token |
 | 65 | Cite exact rule inline? | (covered by Q6 grid) | The Formal cell always cites the exact δ entry / production / translation rule / optimization rule |
@@ -264,7 +264,7 @@ hand-written lexers usually do it.
 
 ### 5.5 Why a toy compiler is the right choice
 CPython's grammar has hundreds of rules and its lexer automaton thousands of
-states — unshowable. Snek goes through the **same phases** with every state,
+states — unshowable. Ouroboros goes through the **same phases** with every state,
 rule and instruction fitting on one screen, which is exactly what a ToC demo
 needs.
 
@@ -274,7 +274,7 @@ letter**, because the lexer decides the token class from the **first
 character**: if names could start with digits, `123` itself would be
 ambiguous. `123abc` starts with a digit → number → numbers allow only digits.
 Python reports `SyntaxError: invalid decimal literal`; C reports `invalid
-suffix "abc" on integer constant`. Snek now does the same (how, in DFA terms:
+suffix "abc" on integer constant`. Ouroboros now does the same (how, in DFA terms:
 §8.1 `BAD_NUMBER`).
 
 ### 5.7 Input tape
@@ -379,9 +379,9 @@ final step nothing was highlighted — fixed. The 2-token window is no longer
 needed (grammar is LL(1) after left-factoring).
 
 ### 5.17 Numbers
-JS numbers are 64-bit floats, exact only to 2⁵³. Snek uses `BigInt` —
-unbounded integers, which is also what makes the "Snek is Turing-complete"
-claim honest. `7 / 2 = 3` (truncating integer division, Snek has only
+JS numbers are 64-bit floats, exact only to 2⁵³. Ouroboros uses `BigInt` —
+unbounded integers, which is also what makes the "Ouroboros is Turing-complete"
+claim honest. `7 / 2 = 3` (truncating integer division, Ouroboros has only
 integers). Division by zero is a runtime error and is never constant-folded
 (the optimizer must not change *when/whether* an error happens).
 
@@ -558,13 +558,13 @@ Formal cell says this explicitly when a Tail is folded.
 
 ### 7.5 Types, scopes, functions (rules Semantic Analysis enforces)
 - **Types:** `int`, `bool`, `string`, `array<T>`, `fn(n)`, and `unknown`.
-- Snek has no type annotations, so types are **inferred locally**: a
+- Ouroboros has no type annotations, so types are **inferred locally**: a
   variable's type is fixed by its `let` initializer. Function parameters,
   function results, and empty array literals `[]` are `unknown`. Expressions
   involving `unknown` pass static checks and are checked by the VM at run
   time. ToC justification (said in the UI): exact static typing of arbitrary
   programs is undecidable (Rice), so every compiler checks a decidable
-  approximation; Snek's is "what is knowable from literals and declarations".
+  approximation; Ouroboros's is "what is knowable from literals and declarations".
 - **Operators:** `+` int×int→int, string×string→string (no implicit
   conversion). `- * /` int only. `< > <= >=` int only. `== !=` same type,
   scalars only (int, bool, string). `&& || !` bool only. `if`/`while`/`for`
@@ -686,7 +686,7 @@ index for every variable (used by Phase 4), errors.
 | `BINARY_SUBSCR` / `STORE_SUBSCR` | a i → v / v a i → | index read / write |
 | `CALL n` | fn args… → r | call with `n` args |
 | `RETURN_VALUE` | v → | return from function (main: halt) |
-| `PRINT` | v → | Snek-specific (CPython calls `print` as a function; noted in UI) |
+| `PRINT` | v → | Ouroboros-specific (CPython calls `print` as a function; noted in UI) |
 | `POP_TOP` | v → | discard expression-statement value |
 | `JUMP_FORWARD L` / `JUMP_BACKWARD L` | — | unconditional (backward = loops) |
 | `POP_JUMP_IF_FALSE L` | c → | branch |
@@ -732,7 +732,7 @@ either removes instructions or replaces a `LOAD_FAST` with a `LOAD_CONST`;
 both can happen only finitely often, so the loop halts.
 
 Honesty note in the UI: CPython does its folding partly on the AST and partly
-in its flow-graph pass (`ast_opt.c`, `flowgraph.c`); Snek does all of it on the
+in its flow-graph pass (`ast_opt.c`, `flowgraph.c`); Ouroboros does all of it on the
 IR so every optimization is visible in one phase.
 
 ### 12.3 UI
@@ -742,7 +742,7 @@ IR so every optimization is visible in one phase.
 ### 12.4 Decidability panel (Q56)
 Shown at the DCE step (Formal + Why cells, plus intro card):
 - "Will this block ever run?" in general = a non-trivial semantic property ⇒ **undecidable** (Rice's theorem; reduces from the halting problem).
-- What Snek removes is **graph-unreachable** code (no path from entry) — plain BFS, decidable — plus branches whose condition folded to a constant.
+- What Ouroboros removes is **graph-unreachable** code (no path from entry) — plain BFS, decidable — plus branches whose condition folded to a constant.
 - So the optimizer is *sound but incomplete*: it never removes live code, and it can't remove all dead code.
 
 ---
@@ -751,7 +751,7 @@ Shown at the DCE step (Formal + Why cells, plus intro card):
 
 - **Assembly:** labels → relative jump offsets in instruction units (like CPython 3.12's `JUMP_FORWARD` / `JUMP_BACKWARD` / `POP_JUMP_IF_FALSE`). Each instruction = 2 bytes (opcode, arg), CPython-style wordcode; args > 255 use an `EXTENDED_ARG` prefix.
 - **Per code object:** `co_code` (bytes), `co_consts`, `co_varnames`, `co_names`, and a line table (instruction → source line).
-- **Opcode numbers:** a Snek-defined table (documented; not CPython's numbers).
+- **Opcode numbers:** a Ouroboros-defined table (documented; not CPython's numbers).
 - **UI — left pane:** constants / names / varnames tables filling in; label-resolution list (`L_end → +4`). **Right:** IR panel switches to a `dis`-style table (line, offset, opname, arg, resolved value) with a hex byte row under each instruction.
 - **2×2 example** at a jump: *What:* `POP_JUMP_IF_FALSE L_else` → bytes `2C 03`. *Why:* the VM needs a number, not a label; the target is 3 instructions ahead. *Formal:* offset = index(L_else) − index(next instruction). *Next:* encode the next instruction.
 
@@ -776,16 +776,16 @@ unbounded recursion).
 
 ### 14.4 Theory framing (Q60–61)
 - The VM is a **universal machine**: the program is *data* it interprets (like a universal TM reading another TM's description).
-- With unbounded integers and `while`, Snek is **Turing-complete**. One stack = PDA power; the VM effectively has two (operand + frames) plus unbounded memory = TM power.
+- With unbounded integers and `while`, Ouroboros is **Turing-complete**. One stack = PDA power; the VM effectively has two (operand + frames) plus unbounded memory = TM power.
 - Therefore **halting is undecidable**: when the step cap trips, the message is "Stopped after 10 000 steps — no algorithm can decide in general whether a program halts (halting problem), so the VM uses a budget instead."
 
 ---
 
 ## 15. Demo program and timing (15–20 min)
 
-Curated `demo.snek` (every feature, short enough to play through):
+Curated `demo.orbs` (every feature, short enough to play through):
 ```
-# demo.snek
+# demo.orbs
 fn square(n) {
   return n * n;
 }
@@ -823,16 +823,16 @@ Error demos (one line each, loaded when asked): `let x = 123abc;` (lexical),
 ## 16. PPT plan (for the teammate)
 
 Built **last**, from the finished app. Screenshots: take them at the steps
-named below on `demo.snek`, dark theme, laptop resolution. Each slide: one
+named below on `demo.orbs`, dark theme, laptop resolution. Each slide: one
 idea, one visual, ≤3 bullets. Speaker notes = the "Why" lines from the app.
 
 | # | Slide | Content | Visual |
 |---|---|---|---|
 | 1 | Title | Ouroboros — watching a compiler think, one automaton at a time | Logo + flowchart |
-| 2 | Why a toy language | Same phases as CPython, every state fits on screen (§5.5) | Snek vs CPython grammar size |
+| 2 | Why a toy language | Same phases as CPython, every state fits on screen (§5.5) | Ouroboros vs CPython grammar size |
 | 3 | The pipeline | 7 phases, input → output of each (§1) | Flowchart screenshot |
 | 4 | Chomsky ladder | Which machine each phase needs, and why the next phase exists (§2) | Ladder diagram |
-| 5 | The language | Tokens, keywords, sample program | `demo.snek` |
+| 5 | The language | Tokens, keywords, sample program | `demo.orbs` |
 | 6 | Lexing = DFA | 5-tuple; longest match; no ε (§5.1) | DFA graph at the `x+` no-move step |
 | 7 | Lexing details | DEAD/total δ, keyword check, `123abc` error (§5.2–5.6) | δ table + error replay |
 | 8 | Parsing = PDA | Grammar (BNF vs EBNF), textbook PDA expand/match (§5.9–5.10) | PDA configuration + derivation strip |
@@ -858,7 +858,7 @@ order. Each step ends with the rules.md verification (`node … tsc -b --force`,
 on").
 
 0. **User action:** install elkjs yourself (`npm install elkjs`) — the agent may not run npm (rules.md).
-1. Docs sync: `snek-grammar.md` → extended EBNF + pure BNF (§7.3–7.4); fix stale paths in `compiler-phases.md`; update `checklist.md` with new roadmap items (after user approval — checklist order is binding).
+1. Docs sync: `ouroboros-grammar.md` → extended EBNF + pure BNF (§7.3–7.4); fix stale paths in `compiler-phases.md`; update `checklist.md` with new roadmap items (after user approval — checklist order is binding).
 2. Global UI shell: 2×2 explanation grid in scrubber, intro cards, glossary hover, elkjs layout helper, 7-box flowchart, error-blocked states.
 3. Phase 1 engine (new DFA, longest-match driver, step kinds) + UI (tape, total δ table, 5-tuple, graph via elkjs), including all new tokens (§7.1–7.2).
 4. Phase 2 engine (`grammar.ts`, `ll1.ts`, table-driven PDA, parse tree, AST builder, derived call graph) + UI (§9.5).
@@ -867,12 +867,12 @@ on").
 7. Phase 5 control-flow graph + optimizations + UI.
 8. Phase 6 assembly/bytecode + UI.
 9. Phase 7 VM + UI.
-10. `demo.snek` + error demos; timing rehearsal.
+10. `demo.orbs` + error demos; timing rehearsal.
 11. PPT (teammate, §16).
 
 **Consistency check** (the one runnable check per ponytail/rules): at dev
 startup, `ll1.ts` asserts the LL(1) table has no conflicts, and a small
-fixture set (`demo.snek` + each error demo) asserts the expected
+fixture set (`demo.orbs` + each error demo) asserts the expected
 accept/reject verdict and error phase. Runs in-browser in dev mode — no test
 runner, no npm script needed.
 

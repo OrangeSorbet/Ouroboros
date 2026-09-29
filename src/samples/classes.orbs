@@ -1,0 +1,14 @@
+# classes.orbs — a class bundles fields (data) with methods (behaviour)
+class Counter {
+  let count = 0;
+  fn add(n) { self.count = self.count + n; }
+  fn get() { return self.count; }
+}
+let a = new Counter();
+let b = new Counter();      # each object has its own fields
+a.add(5);
+a.add(2);
+b.add(1);
+print a.get();              # 7
+print b.get();              # 1
+print a;                    # Counter{count: 7}

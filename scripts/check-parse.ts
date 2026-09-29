@@ -23,8 +23,8 @@ function parseOk(src: string): Program {
 
 assert.deepEqual(CONFLICTS, [], "grammar must be LL(1)");
 
-// demo.snek: parses, ends in match EOF + accept, one chapter per top-level item.
-const demo = parse(tokens(sample("demo.snek")));
+// demo.orbs: parses, ends in match EOF + accept, one chapter per top-level item.
+const demo = parse(tokens(sample("demo.orbs")));
 assert.ok(demo.ok, demo.error?.message);
 assert.equal(demo.trace.at(-1)!.move, "accept");
 assert.equal(demo.trace.at(-2)!.move, "match");
@@ -35,7 +35,7 @@ assert.deepEqual(demo.chapters.map((c) => c.label),
 assert.equal(demo.output!.ast.items.length, 7);
 
 // Every step fills all four explanation cells, within budget.
-for (const r of [demo, parse(tokens(sample("err-parse.snek")))]) {
+for (const r of [demo, parse(tokens(sample("err-parse.orbs")))]) {
   for (const s of r.trace) {
     for (const [k, v] of Object.entries(s.explain)) {
       assert.ok(v.length > 0, `empty ${k} at ${s.move} ${s.top}`);
@@ -73,8 +73,8 @@ const ids: number[] = [];
 JSON.stringify(demo.output!.ast, (k, v) => (k === "id" && ids.push(v), typeof v === "bigint" ? String(v) : v));
 assert.equal(new Set(ids).size, ids.length, "AST ids must be unique");
 
-// err-parse.snek (`let = 5;`): fails at '=' with an expected set, trace kept.
-const bad = parse(tokens(sample("err-parse.snek")));
+// err-parse.orbs (`let = 5;`): fails at '=' with an expected set, trace kept.
+const bad = parse(tokens(sample("err-parse.orbs")));
 assert.equal(bad.ok, false);
 const last = bad.trace.at(-1)!;
 assert.equal(last.move, "error");
@@ -87,4 +87,4 @@ const nested = parse(tokens("{ fn f() {} }"));
 assert.equal(nested.ok, false);
 assert.ok(nested.trace.at(-1)!.expected!.length > 1);
 
-console.log(`check-parse ok (${demo.trace.length} PDA steps for demo.snek)`);
+console.log(`check-parse ok (${demo.trace.length} PDA steps for demo.orbs)`);

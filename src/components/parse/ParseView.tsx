@@ -32,7 +32,7 @@ export function ParseView({ result, index, tokens }: ParseViewProps) {
   return (
     <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", overflow: "hidden", background: colors.background }}>
       <DerivationStrip step={step} />
-      <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
+      <div className="rsp-row" style={{ flex: 1, display: "flex", minHeight: 0 }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: 6, borderBottom: `1px solid ${colors.border}` }}>
             <TabBar tabs={TABS} value={tab} onChange={setTab} />

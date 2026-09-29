@@ -16,6 +16,8 @@ export const State = {
   IN_LINE_COMMENT: "IN_LINE_COMMENT",
   IN_IDENT: "IN_IDENT",
   IN_NUMBER: "IN_NUMBER",
+  NUM_DOT: "NUM_DOT",   // digits then '.', waiting for a fraction digit
+  IN_FLOAT: "IN_FLOAT",
   BAD_NUMBER: "BAD_NUMBER",
   SINGLE: "SINGLE",
   SAW_EQ: "SAW_EQ",
@@ -52,6 +54,7 @@ export const CharClass = {
   letter: "letter",
   escLetter: "escLetter",
   digit: "digit",
+  dot: "dot",
   eq: "eq",
   lt: "lt",
   gt: "gt",
@@ -78,6 +81,7 @@ export const CLASS_LABELS: Record<CharClass, string> = {
   letter: "[a-zA-Z_]∖{n,t}",
   escLetter: "{n,t}",
   digit: "[0-9]",
+  dot: ".",
   eq: "=",
   lt: "<",
   gt: ">",
@@ -91,17 +95,19 @@ export const CLASS_LABELS: Record<CharClass, string> = {
   hash: "#",
   newline: "\\n",
   whitespace: "␠ \\t \\r",
-  single: "+ - ( ) { } ; , [ ]",
+  single: "+ - % ( ) { } ; , [ ] : @",
   other: "other",
 };
 
 // One-char tokens reached through SINGLE; the lexeme picks the kind, the
-// same way the keyword table refines IN_IDENT. `*` is listed here but has
-// its own class because it also closes block comments.
+// same way the keyword table refines IN_IDENT. `*` and `.` are listed here
+// but have their own classes: `*` also closes block comments, `.` also
+// continues a number (3.14).
 export const SINGLE_KINDS: Record<string, TokenKind> = {
   "+": TokenKind.PLUS,
   "-": TokenKind.MINUS,
   "*": TokenKind.STAR,
+  "%": TokenKind.PERCENT,
   "(": TokenKind.LPAREN,
   ")": TokenKind.RPAREN,
   "{": TokenKind.LBRACE,
@@ -110,6 +116,9 @@ export const SINGLE_KINDS: Record<string, TokenKind> = {
   ",": TokenKind.COMMA,
   "[": TokenKind.LBRACKET,
   "]": TokenKind.RBRACKET,
+  ".": TokenKind.DOT,
+  ":": TokenKind.COLON,
+  "@": TokenKind.AT,
 };
 
 // Backslash escapes inside strings: escaped char -> the character it denotes.
@@ -120,6 +129,7 @@ export function classify(ch: string): CharClass {
   if (/[a-zA-Z_]/.test(ch)) return "letter";
   if (/[0-9]/.test(ch)) return "digit";
   switch (ch) {
+    case ".": return "dot";
     case "=": return "eq";
     case "<": return "lt";
     case ">": return "gt";
@@ -154,6 +164,7 @@ export const TRANSITIONS: Partial<Record<State, Partial<Record<CharClass, State>
     digit: State.IN_NUMBER,
     single: State.SINGLE,
     star: State.SINGLE,
+    dot: State.SINGLE,
     eq: State.SAW_EQ,
     lt: State.SAW_LT,
     gt: State.SAW_GT,
@@ -166,8 +177,12 @@ export const TRANSITIONS: Partial<Record<State, Partial<Record<CharClass, State>
   [State.IN_WHITESPACE]: { whitespace: State.IN_WHITESPACE, newline: State.IN_WHITESPACE },
   [State.IN_LINE_COMMENT]: allBut(State.IN_LINE_COMMENT, ["newline"]),
   [State.IN_IDENT]: { letter: State.IN_IDENT, escLetter: State.IN_IDENT, digit: State.IN_IDENT },
-  [State.IN_NUMBER]: { digit: State.IN_NUMBER, letter: State.BAD_NUMBER, escLetter: State.BAD_NUMBER },
-  [State.BAD_NUMBER]: { letter: State.BAD_NUMBER, escLetter: State.BAD_NUMBER, digit: State.BAD_NUMBER },
+  [State.IN_NUMBER]: { digit: State.IN_NUMBER, dot: State.NUM_DOT, letter: State.BAD_NUMBER, escLetter: State.BAD_NUMBER },
+  // NUM_DOT ∉ F: "3." followed by a non-digit backs up to NUMBER "3", which
+  // leaves '.' free to be its own token.
+  [State.NUM_DOT]: { digit: State.IN_FLOAT },
+  [State.IN_FLOAT]: { digit: State.IN_FLOAT, dot: State.BAD_NUMBER, letter: State.BAD_NUMBER, escLetter: State.BAD_NUMBER },
+  [State.BAD_NUMBER]: { letter: State.BAD_NUMBER, escLetter: State.BAD_NUMBER, digit: State.BAD_NUMBER, dot: State.BAD_NUMBER },
   [State.SAW_EQ]: { eq: State.SAW_EQ_EQ },
   [State.SAW_LT]: { eq: State.SAW_LT_EQ },
   [State.SAW_GT]: { eq: State.SAW_GT_EQ },
@@ -202,6 +217,7 @@ export const ACCEPTING: Partial<Record<State, AcceptAction>> = {
   [State.IN_LINE_COMMENT]: "discard",
   [State.IN_IDENT]: { emit: "identOrKeyword" },
   [State.IN_NUMBER]: { emit: TokenKind.NUMBER },
+  [State.IN_FLOAT]: { emit: TokenKind.FLOAT },
   // Longer than the NUMBER prefix, so longest match prefers it: this is how
   // lexer generators encode "reject this pattern" (a longer error rule wins).
   [State.BAD_NUMBER]: { error: "invalid decimal literal" },

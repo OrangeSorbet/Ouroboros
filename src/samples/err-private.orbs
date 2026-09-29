@@ -1,0 +1,7 @@
+# err-private.orbs — priv members are hidden outside their class (Phase 3)
+class Account {
+  priv let balance = 100;
+  fn get() { return self.balance; }
+}
+let a = new Account();
+print a.balance;

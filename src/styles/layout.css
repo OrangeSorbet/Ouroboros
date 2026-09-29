@@ -50,3 +50,43 @@ html, body, #app {
 .intro-card-in {
   animation: intro-card-in 220ms ease-out both;
 }
+
+/* ── Responsive layout (docs/roadmap.md M5) ────────────────────────────────
+   Components size themselves with inline styles; the rules below override
+   those with !important at the breakpoints. Breakpoint queries are mirrored
+   in hooks/useMedia.ts (PHONE). */
+.app-root { height: 100dvh; }
+.side-dock { display: flex; flex-direction: column; flex-shrink: 0; height: 100%; }
+.dock-body { flex: 1; min-height: 0; display: flex; }
+.dock-bar { display: none; }
+
+/* Stacked: phone, or tablet in portrait — the side panel docks under the
+   phase view and can collapse to its bar. */
+@media (max-width: 640px), (max-width: 1024px) and (orientation: portrait) {
+  .app-root { flex-direction: column !important; }
+  .side-dock { width: 100%; height: 42dvh; border-top: 1px solid #242838; }
+  .side-dock.collapsed { height: auto; }
+  .side-dock.collapsed .dock-body { display: none; }
+  .dock-body > * { width: 100% !important; border-left: none !important; box-shadow: none !important; }
+  .dock-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 40px; padding: 0 14px; border: none; cursor: pointer;
+    background: #12141c; color: #e6e8ef; font: 600 13px ui-monospace, Consolas, monospace;
+  }
+  .col-resize { display: none; }
+}
+
+/* Phone: views stack their side column under the main pane; 3-column card
+   grids become one scrolling column. */
+@media (max-width: 640px) {
+  .rsp-row { flex-direction: column !important; }
+  .rsp-row > * { min-height: 0; }
+  .rsp-side { width: auto !important; max-height: 38%; border-left: none !important; border-top: 1px solid #242838; }
+  .rsp-grid3 {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: none !important;
+    grid-auto-rows: minmax(120px, auto);
+    overflow-y: auto;
+  }
+  .rsp-grid3 > * { grid-column: auto !important; }
+}

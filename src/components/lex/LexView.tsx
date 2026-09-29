@@ -101,7 +101,7 @@ export function LexView({ result, index, source }: LexViewProps) {
   return (
     <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", overflow: "hidden", background: colors.background }}>
       <InputTape source={source} step={step} />
-      <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
+      <div className="rsp-row" style={{ flex: 1, display: "flex", minHeight: 0 }}>
         <div style={{ flex: 1, position: "relative", minWidth: 0 }}>
           {main === "graph" ? (
             <ElkGraph nodes={nodes} edges={edges} direction="RIGHT" startNodeId={State.START} />
@@ -123,7 +123,7 @@ export function LexView({ result, index, source }: LexViewProps) {
             </div>
           )}
         </div>
-        <div style={{ width: 260, flexShrink: 0, display: "flex", flexDirection: "column", borderLeft: `1px solid ${colors.border}`, background: colors.panelBackground }}>
+        <div className="rsp-side" style={{ width: 260, flexShrink: 0, display: "flex", flexDirection: "column", borderLeft: `1px solid ${colors.border}`, background: colors.panelBackground }}>
           <div style={{ padding: 6, borderBottom: `1px solid ${colors.border}` }}>
             <TabBar tabs={TABS_SIDE} value={side} onChange={setSide} />
           </div>

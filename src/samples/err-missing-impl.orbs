@@ -1,0 +1,8 @@
+# err-missing-impl.orbs — a concrete subclass must implement every abstract method
+abstract class Shape {
+  abstract fn area();
+  abstract fn name();
+}
+class Circle : Shape {
+  fn area() { return 3; }
+}

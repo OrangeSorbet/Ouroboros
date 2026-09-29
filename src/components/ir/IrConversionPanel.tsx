@@ -49,7 +49,7 @@ export function IrConversionPanel({ result, index, source }: IrConversionPanelPr
     ));
 
   return (
-    <div style={{ width: 420, flexShrink: 0, height: "100vh", display: "flex", flexDirection: "column", background: colors.codeBg, borderLeft: `1px solid ${colors.border}`, color: colors.codeForeground }}>
+    <div style={{ width: 420, flexShrink: 0, height: "100%", display: "flex", flexDirection: "column", background: colors.codeBg, borderLeft: `1px solid ${colors.border}`, color: colors.codeForeground }}>
       <div style={head}>source</div>
       <div style={box}>
         {lines.map((l, i) => {

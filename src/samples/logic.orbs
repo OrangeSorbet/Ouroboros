@@ -1,0 +1,9 @@
+# logic.orbs — comparisons, short-circuit && and ||, arrays
+let scores = [72, 45, 90];
+let passed = 0;
+for (let i = 0; i < len(scores); i = i + 1) {
+  if (scores[i] >= 50 && !(scores[i] > 100)) { passed = passed + 1; }
+}
+print passed;                       # 2
+print passed == 2 || 1 / 0 == 0;    # true: || never evaluates 1 / 0
+if (false) { print "dead"; }        # removed by Phase 5

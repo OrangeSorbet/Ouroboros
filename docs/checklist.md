@@ -5,9 +5,9 @@ Mirror of `tooldata/checklist.json`. Update JSON via tool; re-sync this file aft
 Legend: `[x]` Done · `[ ]` Todo/In Progress/Review
 
 ## Phase 1: Grammar & Lexer
-Define Snek's language and build the DFA-driven lexer.
+Define Ouroboros's language and build the DFA-driven lexer.
 
-- [x] Define Snek grammar (tokens, keywords, CFG rules)
+- [x] Define Ouroboros grammar (tokens, keywords, CFG rules)
   - [x] Enumerate token types & keyword list
   - [x] Draft CFG production rules
 - [x] Build DFA transition table for lexer
@@ -22,9 +22,9 @@ Define Snek's language and build the DFA-driven lexer.
 - [ ] Console-log DFA state transitions per char
 
 ## Phase 2: Parser
-Build the CFG/PDA-based parser and AST for Snek.
+Build the CFG/PDA-based parser and AST for Ouroboros.
 
-- [x] Define CFG production rules for Snek (incl. `AssignStmt` for reassignment, added after the grammar was found to have no way to re-assign a declared variable)
+- [x] Define CFG production rules for Ouroboros (incl. `AssignStmt` for reassignment, added after the grammar was found to have no way to re-assign a declared variable)
 - [x] Implement PDA-based/recursive-descent parser.ts
   - [x] Implement expression parsing (precedence climbing)
   - [x] Implement statement parsing (let, assign, print, if, while, block, expr-stmt)
@@ -45,9 +45,9 @@ Render the DFA as an interactive React Flow graph.
 - [x] Enforce one-transition-per-character playback; show epsilon/acceptance as its own visible step
 
 ## Phase 3b: Source Input
-Load Snek source into the app via .snek file upload.
+Load Ouroboros source into the app via .orbs file upload.
 
-- [x] Build .snek file upload input
+- [x] Build .orbs file upload input
 - [x] Wire uploaded source into lexer/parser pipeline
 - [x] Make the code panel editable (Save button / Ctrl+Enter to recompile), resizable, and permanently visible (split-screen, never covered by phase-view zoom transitions)
 
@@ -84,7 +84,7 @@ Slide content, visual identity, and generation prompt for classmates — see `do
 ## Phase 8: Docs Sync for the Extended Language
 See `docs/phase34plan.md` §17 step 1.
 
-- [x] Update `docs/snek-grammar.md` to the extended EBNF + pure BNF (§7.3–7.4)
+- [x] Update `docs/ouroboros-grammar.md` to the extended EBNF + pure BNF (§7.3–7.4)
 - [x] Fix stale paths in `docs/compiler-phases.md`
 
 ## Phase 9: Global UI Shell
@@ -133,7 +133,7 @@ See `docs/phase34plan.md` §3 (Phase 2 audit), §9.
 ## Phase 16: Execution VM (compiler Phase 7) + Delivery
 - [x] Fetch–decode–execute VM, runtime errors, step/frame caps (§14)
 - [x] UI: stacks, locals, console, PC highlight
-- [ ] `demo.snek` + error demos; timing rehearsal (§15)
+- [ ] `demo.orbs` + error demos; timing rehearsal (§15)
 - [ ] Capture screenshots S1–S11 (`docs/ppt.md` §5), then build the deck
 
 ---

@@ -125,7 +125,7 @@ export const fixtures: Record<string, { ir: IrProgram; output?: string[]; error?
       functions: [code("f", [], [], [null], [], ["LOAD_CONST 0", "RETURN_VALUE"])],
       main: main([], [1n, null], ["@2", "LOAD_GLOBAL 0", "CALL 0", "LOAD_CONST 0", "BINARY_OP 0", "PRINT"], ["f"]),
     },
-    error: /returned no value/,
+    error: /none used as an operand/,
   },
 };
 

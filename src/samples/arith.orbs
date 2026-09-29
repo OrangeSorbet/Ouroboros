@@ -1,0 +1,9 @@
+# arith.orbs — precedence, associativity, %, unary minus
+# Every line is constant, so Phase 5 folds it all away.
+print 2 + 3 * 4;        # 14: * binds tighter than +
+print (2 + 3) * 4;      # 20: parentheses regroup
+print 10 - 4 - 3;       # 3: - is left-associative
+print -2 * 3;           # -6: unary minus binds tightest
+print 17 % 5;           # 2: remainder
+print 7 / 2;            # 3: int division truncates
+print 99999999999 * 99999999999;  # ints never overflow

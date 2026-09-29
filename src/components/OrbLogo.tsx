@@ -1,11 +1,11 @@
-interface SnekLogoProps {
+interface OrbLogoProps {
   size?: number;
 }
 
-export function SnekLogo({ size = 28 }: SnekLogoProps) {
+export function OrbLogo({ size = 28 }: OrbLogoProps) {
   return (
     <img
-      src="/sneklogo.png"
+      src="/orblogo.png"
       width={size}
       height={size}
       alt="Ouroboros logo"

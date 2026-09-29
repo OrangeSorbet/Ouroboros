@@ -1,0 +1,18 @@
+# zoo.orbs — inheritance + polymorphism: one call, different methods
+class Animal {
+  let name;
+  let legs = 4;
+  fn init(name) { self.name = name; }
+  fn speak() { return "..."; }
+  fn intro() { return self.name + " says " + self.speak(); }
+}
+class Snake : Animal {
+  let legs = 0;                                   # overrides the default
+  fn speak() { return "hiss"; }                   # overrides Animal.speak
+  fn intro() { return "(slithers) " + super.intro(); }
+}
+let pets = [new Animal("rex"), new Snake("kaa")];
+for p in pets {
+  print p.intro();          # the VM picks speak() by p's run-time class
+}
+print pets[1].legs;         # 0

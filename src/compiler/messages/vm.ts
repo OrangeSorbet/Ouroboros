@@ -5,7 +5,7 @@ import type { Explanation } from "../trace.ts";
 const clip = (s: string, n = 40) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
 const vals = (xs: string[]) => clip(xs.join(", "), 44);
 
-export type VmErrorKind = "division" | "type" | "index" | "call" | "arity" | "none" | "halt" | "frames" | "unbound" | "opcode";
+export type VmErrorKind = "division" | "type" | "value" | "index" | "key" | "attr" | "private" | "call" | "arity" | "none" | "halt" | "frames" | "unbound" | "opcode";
 
 export interface VmStepInfo {
   opname: string;
@@ -16,6 +16,8 @@ export interface VmStepInfo {
   nextPc: number;     // byte offset execution continues at (in the resulting top frame)
   flow?: "jump" | "fallthrough" | "call" | "return" | "halt";
   target?: string;    // call: callee; return: caller
+  dispatch?: string;  // method call on an object: the lookup walk ("Snake.intro ✗ → Animal.intro ✓")
+  ctor?: string;      // calling a class: the class being constructed
 }
 
 // Stack effect of each opcode, in the notation [.., a, b] → [.., r].
@@ -28,10 +30,19 @@ const EFFECT: Record<string, (arg: string) => string> = {
   COMPARE_OP: (a) => `COMPARE_OP ${a}: [.., a, b] → [.., a${a}b : bool]`,
   UNARY_NEGATIVE: () => "UNARY_NEGATIVE: [.., a] → [.., −a]",
   UNARY_NOT: () => "UNARY_NOT: [.., a] → [.., ¬a]",
-  BUILD_LIST: () => "BUILD_LIST n: [.., x1..xn] → [.., [x1..xn]]",
-  BINARY_SUBSCR: () => "BINARY_SUBSCR: [.., arr, i] → [.., arr[i]]",
-  STORE_SUBSCR: () => "STORE_SUBSCR: [.., v, arr, i] → [..];  arr[i] := v",
+  BUILD_LIST: () => "BUILD_LIST n: [.., x1..xn] → [.., ref]  (new coil on the heap)",
+  BUILD_SCALE: () => "BUILD_SCALE n: [.., x1..xn] → [.., ref]  (new scale on the heap)",
+  BUILD_DEN: () => "BUILD_DEN n: [.., k1, v1..kn, vn] → [.., ref]  (new den on the heap)",
+  BUILD_CLUTCH: () => "BUILD_CLUTCH n: [.., x1..xn] → [.., ref]  (new clutch; duplicates collapse)",
+  LOAD_METHOD: (a) => `LOAD_METHOD ${a}: [.., obj] → [.., obj.${a}]  (bound method)`,
+  LOAD_ATTR: (a) => `LOAD_ATTR ${a}: [.., obj] → [.., obj.${a}]`,
+  STORE_ATTR: (a) => `STORE_ATTR ${a}: [.., v, obj] → [..];  obj.${a} := v`,
+  GET_ITER: () => "GET_ITER: [.., seq] → [.., iter(seq)]",
+  FOR_ITER: () => "FOR_ITER d: [.., it] → [.., it, next] | exhausted: [..], pc := next + 2d",
+  BINARY_SUBSCR: () => "BINARY_SUBSCR: [.., obj, i] → [.., obj[i]]  (coil/scale index, den key)",
+  STORE_SUBSCR: () => "STORE_SUBSCR: [.., v, obj, i] → [..];  obj[i] := v",
   CALL: () => "CALL n: [.., fn, a1..an] → [..] and push frame(fn, locals = a1..an)",
+  CALL_BUILTIN: (a) => `CALL_BUILTIN ${a}: [.., x] → [.., ${a}(x)]  (no frame)`,
   RETURN_VALUE: () => "RETURN_VALUE: [.., v] → pop frame; caller's stack [.., v]",
   PRINT: () => "PRINT: [.., v] → [..];  output := output · format(v)",
   POP_TOP: () => "POP_TOP: [.., v] → [..]",
@@ -47,19 +58,28 @@ const WHY: Record<string, string> = {
   LOAD_FAST: "Locals are addressable memory beside the stack — storage a one-stack PDA lacks. The slot number was fixed by Phase 3.",
   STORE_FAST: "Writable memory lets any later step depend on any earlier one — tape-like storage, beyond what a single stack allows.",
   LOAD_GLOBAL: "Functions are values: the VM pushes a reference found via co_names; the CALL that follows consumes it.",
-  BINARY_OP: "Operands were pushed first (post-order), so the operator pops two and pushes one. Integers are unbounded BigInts.",
+  BINARY_OP: "Operands were pushed first (post-order), so the operator pops two and pushes one. Ints are unbounded; an int meeting a float widens.",
+  CALL_BUILTIN: "A built-in runs inside the VM itself, like a hardware instruction: no frame is pushed and pc just moves on.",
   COMPARE_OP: "Comparison turns two values into one bool, which a conditional jump will consume to choose the path.",
   UNARY_NEGATIVE: "A unary operator pops one operand and pushes one result — the stack depth is unchanged.",
   UNARY_NOT: "A unary operator pops one operand and pushes one result — the stack depth is unchanged.",
-  BUILD_LIST: "Arrays live in unbounded heap memory: n items leave the stack and one reference to the new array replaces them.",
-  BINARY_SUBSCR: "The index is a run-time value, so the bounds check can only happen now — the compiler can't decide it in general.",
-  STORE_SUBSCR: "Arrays are mutable heap memory; the bounds check happens at run time because the index isn't known before.",
+  BUILD_LIST: "Collections live in unbounded heap memory: n items leave the stack and one reference to the new coil replaces them.",
+  BUILD_SCALE: "A scale is built once and never changed; the stack keeps only a reference to it on the heap.",
+  BUILD_DEN: "Each key is hashed to find its bucket, so lookup does not scan; the stack keeps a reference to the den.",
+  BUILD_CLUTCH: "Items are hashed on the way in, so a repeated item lands on the same key and is stored once.",
+  LOAD_METHOD: "Which method runs depends on the object's run-time kind, so the VM looks the name up now, in that kind's table.",
+  LOAD_ATTR: "Fields live in the object on the heap; the stack only held a reference, so reading one follows it.",
+  STORE_ATTR: "The write goes through the reference into the heap object, so every variable pointing at it sees the change.",
+  GET_ITER: "The iterator is the loop's memory of how far it got — one more value the machine keeps on its stack.",
+  FOR_ITER: "Each round either yields the next item or ends the loop: a data-dependent branch, like POP_JUMP_IF_FALSE.",
+  BINARY_SUBSCR: "The index (or den key) is a run-time value, so whether it is in range — or present — can only be checked now.",
+  STORE_SUBSCR: "Coils and dens are mutable heap memory; the write goes through the reference, so every alias sees it.",
   CALL: "A call pushes a frame on a second stack. Operand stack + frame stack + unbounded memory ≈ a Turing machine; one stack = a PDA.",
   RETURN_VALUE: "Popping the frame stack resumes the caller at its saved pc (the return address) with the result on the operand stack.",
-  PRINT: "PRINT is Snek-specific (CPython calls print as a function); output is the machine's observable result.",
+  PRINT: "PRINT is Ouroboros-specific (CPython calls print as a function); output is the machine's observable result.",
   POP_TOP: "An expression statement's value is unused, so it is discarded to keep the stack balanced.",
   JUMP_FORWARD: "An unconditional jump skips code (e.g. the else branch). The offset is relative, counted in 2-byte units.",
-  JUMP_BACKWARD: "Backward jumps are loops. Loops + unbounded integers make Snek Turing-complete — so halting is undecidable.",
+  JUMP_BACKWARD: "Backward jumps are loops. Loops + unbounded integers make Ouroboros Turing-complete — so halting is undecidable.",
   POP_JUMP_IF_FALSE: "The branch reads the bool on top of the stack: the machine's next state depends on data, not only on the code.",
   JUMP_IF_FALSE_OR_POP: "Short-circuit &&: if the left side is false the result is known, so the right side is skipped entirely.",
   JUMP_IF_TRUE_OR_POP: "Short-circuit ||: if the left side is true the result is known, so the right side is skipped entirely.",
@@ -81,9 +101,25 @@ export function explainVmStep(s: VmStepInfo): Explanation {
   }
   const why = s.flow === "halt"
     ? "RETURN_VALUE in <main> is the halting state: nothing is left to resume, so the machine stops."
-    : s.opname === "BINARY_OP" && s.argrepr === "/"
-      ? "Snek has only integers: / truncates toward zero. A zero divisor is a run-time error, never folded away by the optimizer."
+    : s.opname === "BINARY_OP" && (s.argrepr === "/" || s.argrepr === "%")
+      ? "int / and % truncate toward zero (a float operand gives a float). A zero divisor is a run-time error, never folded away by the optimizer."
       : WHY[s.opname] ?? "The VM executed one fetched instruction.";
+  if (s.dispatch) {
+    return {
+      what: `CALL: dynamic dispatch ${clip(s.dispatch, 110)}.`,
+      why: "The object's run-time class picks the method: the VM walks its class chain, leaf first. The compiler could not know which override runs.",
+      formal: "lookup(class(self), m) = the first class up the chain that defines m",
+      next,
+    };
+  }
+  if (s.ctor) {
+    return {
+      what: `CALL ${s.ctor}: a new ${s.ctor} object is allocated, every field set to none.`,
+      why: "Constructing is several calls: field initializers from the root class down, then init — each runs as its own frame.",
+      formal: `new ${clip(s.ctor, 20)}(a…): obj := alloc(fields⁺); run each <fields>(obj) root-first, then init(obj, a…)`,
+      next: s.target ? next : "No initializer or init to run: the object is already on the stack.",
+    };
+  }
   const fx = EFFECT[s.opname];
   return {
     what: `${head}${effect ? `: ${effect}` : ""}${s.flow === "jump" ? " — jump taken" : ""}.`,
@@ -94,25 +130,33 @@ export function explainVmStep(s: VmStepInfo): Explanation {
 }
 
 const ERROR_WHY: Record<VmErrorKind, string> = {
-  division: "Division by zero has no integer result. Whether a divisor is 0 depends on run-time data, so only the VM can detect it.",
+  division: "Division by zero has no result. Whether a divisor is 0 depends on run-time data, so only the VM can detect it.",
+  value: "The argument has the right type but the wrong contents (text that is not a number); only the run-time value can show that.",
   type: "Values here were typed unknown or mixed at compile time; the VM checks the actual runtime types and finds no rule for them.",
-  index: "An index is a run-time value; checking it against the array length is only possible now, while the program runs.",
+  index: "An index is a run-time value; checking it against the length is only possible now, while the program runs.",
+  key: "Which keys a den holds depends on everything the program did before; only the run-time lookup can tell.",
+  private: "The receiver's class was unknown at compile time, so privacy is checked again here — otherwise an unknown value could bypass priv.",
+  attr: "The receiver's kind was not known at compile time, so the member name could only be checked now, against its class or table.",
   call: "Only function references can be called; the value on the stack under the arguments is something else.",
   arity: "Each frame has exactly one slot per parameter, so the argument count must match the function's parameter count.",
-  none: "The function finished without return, so it produced no value; using that result in an expression is meaningless.",
-  halt: "Snek is Turing-complete, so no algorithm decides whether an arbitrary program halts; a step budget is the only safe way out.",
+  none: "none means \"no value\" (the literal, or a function that finished without return); it can be stored and compared, not computed with.",
+  halt: "Ouroboros is Turing-complete, so no algorithm decides whether an arbitrary program halts; a step budget is the only safe way out.",
   frames: "Each call pushes a frame; real machines have finite memory, so unbounded recursion must be cut off at a fixed depth.",
   unbound: "A slot was read before any STORE_FAST wrote it, so the frame has no value to push.",
-  opcode: "The byte at pc is not in Snek's opcode table, so decode fails: the bytes are not a valid program description.",
+  opcode: "The byte at pc is not in Ouroboros's opcode table, so decode fails: the bytes are not a valid program description.",
 };
 
 const ERROR_FORMAL: Record<VmErrorKind, string> = {
-  division: "BINARY_OP /: [.., a, 0] → error (a / 0 undefined in ℤ)",
+  division: "BINARY_OP / or %: [.., a, 0] → error (a / 0 is undefined)",
+  value: "int(s) / float(s) require s to spell a number",
   type: "no typing/evaluation rule matches these operand types → runtime type error",
-  index: "BINARY_SUBSCR/STORE_SUBSCR require 0 ≤ i < len(arr)",
+  index: "BINARY_SUBSCR/STORE_SUBSCR require 0 ≤ i < len(a)",
+  key: "BINARY_SUBSCR on a den requires k ∈ keys(d)",
+  private: "priv C.m is usable only by code objects of C (named C.…)",
+  attr: "LOAD_METHOD / LOAD_ATTR m require m ∈ members(class(obj))",
   call: "CALL n requires stack[−n−1] to be a function reference",
   arity: "CALL n on fn(p1..pk) requires n = k",
-  none: "no value ∉ Value: it may be printed, discarded or returned, not used as an operand",
+  none: "none ∉ dom(op): it may be stored, passed, compared (==, !=) or printed, not used as an operand",
   halt: "HALT = {⟨P⟩ | P halts} is undecidable (Turing, 1936) ⇒ budget of 10 000 steps",
   frames: "|frame stack| ≤ 256",
   unbound: "LOAD_FAST s requires locals[s] to be assigned",
@@ -134,12 +178,24 @@ export const vmErrors = {
   unaryType: (op: string, a: string) => `Runtime type error: cannot apply ${op} to ${a}.`,
   condType: (a: string) => `Runtime type error: condition must be a bool, got ${a}.`,
   notArray: (a: string) => `Runtime type error: cannot index into ${a}.`,
-  indexType: (a: string) => `Runtime type error: array index must be an int, got ${a}.`,
-  index: (i: string, len: number) => `Runtime error: index ${i} out of range for array of length ${len}.`,
+  unhashable: (a: string) => `Runtime type error: ${a} cannot be a den key or clutch item (not hashable).`,
+  key: (k: string) => `Runtime error: key ${k} is not in the den.`,
+  noMethod: (kind: string, name: string) => `Runtime error: ${kind} has no method ${name}().`,
+  noField: (kind: string, name: string) => `Runtime error: ${kind} has no field ${name}.`,
+  methodNotCalled: (name: string) => `Runtime error: ${name} is a method — call it as .${name}(…).`,
+  privateMember: (owner: string, name: string) => `Runtime error: ${name} is private to ${owner}.`,
+  noOverload: (what: string, argc: number) => `Runtime error: no ${what} takes ${argc} argument(s).`,
+  immutable: () => "Runtime type error: scales are immutable.",
+  notIterable: (a: string) => `Runtime type error: cannot loop over ${a}.`,
+  emptyPop: () => "Runtime error: pop() from an empty coil.",
+  indexType: (a: string) => `Runtime type error: index must be an int, got ${a}.`,
+  index: (i: string, len: number) => `Runtime error: index ${i} out of range for length ${len}.`,
   notFunction: (a: string) => `Runtime error: cannot call ${a} — it is not a function.`,
   unknownFunction: (name: string) => `Runtime error: no function named ${name}.`,
   arity: (name: string, want: number, got: number) => `Runtime error: ${name} expects ${want} argument(s) but got ${got}.`,
-  none: () => "Runtime error: function returned no value, but its result was used in an expression.",
+  none: () => "Runtime error: none used as an operand (no value to compute with).",
+  builtinType: (name: string, a: string) => `Runtime type error: ${name}() cannot take ${a}.`,
+  builtinValue: (name: string, v: string) => `Runtime error: ${name}(${v}) — the text is not a number.`,
   halt: (cap: number) => `Stopped after ${cap.toLocaleString("en-US").replace(",", " ")} steps — no algorithm can decide in general whether a program halts (halting problem), so the VM uses a budget instead.`,
   frames: (cap: number) => `Runtime error: call depth exceeded ${cap} frames (unbounded recursion?).`,
   unbound: (name: string) => `Runtime error: variable ${name} used before it was assigned.`,

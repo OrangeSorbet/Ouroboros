@@ -31,7 +31,7 @@ export function OptView({ result, index }: OptViewProps) {
       status: dead.has(b.id) ? "dim" : b.id === step.activeBlock ? "active" : "idle",
     }));
     const edges: GraphEdge[] = step.edges.map((e, i) => {
-      const tone: EdgeTone = e.back ? "back" : e.kind === "true" ? "true" : e.kind === "false" ? "false" : "default";
+      const tone: EdgeTone = e.back ? "back" : e.kind === "true" || e.kind === "next" ? "true" : e.kind === "false" || e.kind === "done" ? "false" : "default";
       return {
         id: `${step.code}-${i}-${e.from}-${e.to}`, source: `B${e.from}`, target: `B${e.to}`,
         label: e.kind === "fall" ? undefined : e.kind, tone,

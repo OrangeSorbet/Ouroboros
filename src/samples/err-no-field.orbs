@@ -1,0 +1,4 @@
+# err-no-field.orbs — objects have exactly the fields their class declares
+class Point { let x = 0; let y = 0; }
+let p = new Point();
+print p.z;

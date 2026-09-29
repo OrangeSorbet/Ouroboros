@@ -1,0 +1,11 @@
+# clutch.orbs — a clutch is a set: each item at most once
+let seen = @[1, 2, 2, 3];
+print seen;                 # @[1, 2, 3]
+seen.add(3);
+seen.add(4);
+print len(seen);            # 4
+print seen.has(5);          # false
+let words = ["hiss", "rattle", "hiss"];
+let unique = @["hiss"];
+for w in words { unique.add(w); }
+print unique;               # @["hiss", "rattle"]

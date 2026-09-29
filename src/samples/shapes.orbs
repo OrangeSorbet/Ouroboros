@@ -1,0 +1,17 @@
+# shapes.orbs — abstraction: Shape promises area(), subclasses provide it
+abstract class Shape {
+  abstract fn area();
+  fn describe() { return "area " + str(self.area()); }
+}
+class Circle : Shape {
+  let r;
+  fn init(r) { self.r = r; }
+  fn area() { return 3.14 * self.r * self.r; }
+}
+class Square : Shape {
+  let side;
+  fn init(side) { self.side = side; }
+  fn area() { return self.side * self.side; }
+}
+let shapes = [new Circle(1.0), new Square(3)];   # a coil<Shape>
+for s in shapes { print s.describe(); }

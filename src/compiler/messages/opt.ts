@@ -9,7 +9,7 @@ export const optMessages = {
   leaders: (code: string, leaders: number[], first: boolean): Ex => ({
     what: `${code}: found ${leaders.length} leader${leaders.length === 1 ? "" : "s"} at #${leaders.join(", #")}.`,
     why: first
-      ? "Snek optimizes only this IR (CPython splits it between AST and flow graph). Blocks start at leaders: control enters only there."
+      ? "Ouroboros optimizes only this IR (CPython splits it between AST and flow graph). Blocks start at leaders: control enters only there."
       : "A leader is where control can enter; cutting at leaders gives straight-line blocks with no jump into their middle.",
     formal: "Leaders = {0} ∪ {labels[L] | some jump targets L} ∪ {i+1 | instr i is a jump or RETURN_VALUE}",
   }),
@@ -41,7 +41,7 @@ export const optMessages = {
   fold: (expr: string, result: string, div: boolean): Ex => ({
     what: `Folded ${expr} into LOAD_CONST ${result}.`,
     why: div
-      ? "Both operands are compile-time constants and the divisor is non-zero; BigInt division truncates toward zero, as the VM does."
+      ? "Both operands are compile-time constants and the divisor is non-zero; int / and % truncate toward zero, as the VM does."
       : "Both operands are compile-time constants, so the result is too — computing it now changes no observable behaviour.",
     formal: "LOAD_CONST a · LOAD_CONST b · BINARY_OP op  ⇒  LOAD_CONST (a op b)   (likewise COMPARE_OP, unary ops)",
   }),

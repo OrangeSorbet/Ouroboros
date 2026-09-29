@@ -20,7 +20,7 @@ export function OptPanel({ result, index }: OptPanelProps) {
   useEffect(() => ref.current?.scrollIntoView({ block: "nearest" }), [index]);
 
   return (
-    <div style={{ width: 420, flexShrink: 0, height: "100vh", display: "flex", flexDirection: "column", background: colors.codeBg, borderLeft: `1px solid ${colors.border}`, color: colors.codeForeground }}>
+    <div style={{ width: 420, flexShrink: 0, height: "100%", display: "flex", flexDirection: "column", background: colors.codeBg, borderLeft: `1px solid ${colors.border}`, color: colors.codeForeground }}>
       <div style={{ padding: "6px 12px", fontSize: 11, color: colors.textSecondary, borderBottom: `1px solid ${colors.border}`, fontFamily: fonts.base }}>
         IR — code object {step.code} · {step.instrsAfter.length} instructions
       </div>

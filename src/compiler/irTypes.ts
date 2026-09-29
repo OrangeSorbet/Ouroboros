@@ -2,6 +2,8 @@
 // (docs/phase34plan.md §11.1). Produced by IR generation (phase 4),
 // rewritten by the optimizer (phase 5, same shape), assembled to bytes in
 // phase 6. Jumps target *labels*, not indices, until assembly.
+import { BUILTINS, formatFloat } from "./values.ts";
+import type { ClassInfo } from "./semanticTypes.ts";
 
 export const OPCODES = [
   "LOAD_CONST",           // arg = index into consts            → push consts[arg]
@@ -12,10 +14,19 @@ export const OPCODES = [
   "COMPARE_OP",           // arg = index into COMPARE_OPS        a b → bool
   "UNARY_NEGATIVE",       //                                     a → -a
   "UNARY_NOT",            //                                     a → !a
-  "BUILD_LIST",           // arg = n                             x1..xn → array
+  "BUILD_LIST",           // arg = n                             x1..xn → coil
+  "BUILD_SCALE",          // arg = n                             x1..xn → scale
+  "BUILD_DEN",            // arg = n pairs                       k1 v1..kn vn → den
+  "BUILD_CLUTCH",         // arg = n                             x1..xn → clutch
+  "LOAD_METHOD",          // arg = index into names (method)     obj → obj.method (bound)
+  "LOAD_ATTR",            // arg = index into names (field)      obj → obj.field
+  "STORE_ATTR",           // arg = index into names (field)      v obj →  (obj.field = v)
+  "GET_ITER",             //                                     seq → iterator
+  "FOR_ITER",             // target = label (forward)            it → it x  (exhausted: pop it, jump)
   "BINARY_SUBSCR",        //                                     arr i → arr[i]
   "STORE_SUBSCR",         //                                     v arr i →  (arr[i] = v)
   "CALL",                 // arg = n args                        fn a1..an → result
+  "CALL_BUILTIN",         // arg = index into BUILTINS           a → f(a)
   "RETURN_VALUE",         //                                     v →  (return v; <main>: halt)
   "PRINT",                //                                     v →  (append to output)
   "POP_TOP",              //                                     v →
@@ -27,15 +38,15 @@ export const OPCODES = [
 ] as const;
 export type Opcode = (typeof OPCODES)[number];
 
-export const BINARY_OPS = ["+", "-", "*", "/"] as const;
+export const BINARY_OPS = ["+", "-", "*", "/", "%"] as const;
 export const COMPARE_OPS = ["==", "!=", "<", ">", "<=", ">="] as const;
 
 export const JUMP_OPS: ReadonlySet<Opcode> = new Set<Opcode>([
-  "JUMP_FORWARD", "JUMP_BACKWARD", "POP_JUMP_IF_FALSE", "JUMP_IF_FALSE_OR_POP", "JUMP_IF_TRUE_OR_POP",
+  "JUMP_FORWARD", "JUMP_BACKWARD", "POP_JUMP_IF_FALSE", "JUMP_IF_FALSE_OR_POP", "JUMP_IF_TRUE_OR_POP", "FOR_ITER",
 ]);
 
-// null = Snek's "no value" (a function that returned nothing).
-export type IrConst = bigint | boolean | string | null;
+// bigint = int, number = float, null = none.
+export type IrConst = bigint | number | boolean | string | null;
 
 export interface IrInstr {
   op: Opcode;
@@ -51,7 +62,7 @@ export interface CodeObject {
   nslots: number;
   slotNames: string[];
   consts: IrConst[];   // no duplicates (compare with Object.is / ===)
-  names: string[];     // function names referenced by LOAD_GLOBAL
+  names: string[];     // function / class names (LOAD_GLOBAL), method and field names (LOAD_METHOD, *_ATTR)
   instrs: IrInstr[];
   // labels[labelId] = index in `instrs` of the instruction the label sits
   // before (may equal instrs.length = end of code).
@@ -60,7 +71,8 @@ export interface CodeObject {
 
 export interface IrProgram {
   main: CodeObject;
-  functions: CodeObject[];
+  functions: CodeObject[];     // functions, methods ("Class.m") and field initializers ("Class.<fields>")
+  classes?: ClassInfo[];       // M3; absent in hand-built fixtures
 }
 
 // Canonical one-line rendering used by every IR/bytecode view, e.g.
@@ -73,15 +85,20 @@ export function formatInstr(ins: IrInstr, code: CodeObject): string {
     case "LOAD_CONST": return `${ins.op} ${a} (${formatConst(code.consts[a])})`;
     case "LOAD_FAST":
     case "STORE_FAST": return `${ins.op} ${a} (${code.slotNames[a] ?? "?"})`;
-    case "LOAD_GLOBAL": return `${ins.op} ${a} (${code.names[a] ?? "?"})`;
+    case "LOAD_GLOBAL":
+    case "LOAD_METHOD":
+    case "LOAD_ATTR":
+    case "STORE_ATTR": return `${ins.op} ${a} (${code.names[a] ?? "?"})`;
     case "BINARY_OP": return `${ins.op} ${a} (${BINARY_OPS[a]})`;
     case "COMPARE_OP": return `${ins.op} ${a} (${COMPARE_OPS[a]})`;
+    case "CALL_BUILTIN": return `${ins.op} ${a} (${BUILTINS[a]})`;
     default: return `${ins.op} ${a}`;
   }
 }
 
 export function formatConst(c: IrConst): string {
   if (c === null) return "none";
+  if (typeof c === "number") return formatFloat(c);
   if (typeof c === "string") return JSON.stringify(c);
   return String(c);
 }

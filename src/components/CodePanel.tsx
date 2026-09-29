@@ -1,5 +1,6 @@
 import type { ComponentChildren } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
+import { KEYWORDS } from "../compiler/tokens";
 import { colors } from "../styles/colors";
 import { fonts } from "../styles/fonts";
 
@@ -20,7 +21,12 @@ interface Segment {
 
 // Comments (# line, /* */ within one line), keywords, numbers, names,
 // whitespace, strings, operators — in that priority order.
-const TOKEN_RE = /(#.*|\/\*.*?(?:\*\/|$))|(\b(?:let|print|if|else|while|for|fn|return|true|false)\b)|(\b\d+\b)|([a-zA-Z_]\w*)|(\s+)|("(?:[^"\\]|\\.)*"?)|([^\sA-Za-z0-9_"]+)/g;
+// Keywords come from the lexer's table, so new keywords highlight too.
+const TOKEN_RE = new RegExp(
+  /(#.*|\/\*.*?(?:\*\/|$))|(\b(?:KW)\b)|(\b\d+(?:\.\d+)?\b)|([a-zA-Z_]\w*)|(\s+)|("(?:[^"\\]|\\.)*"?)|([^\sA-Za-z0-9_"]+)/.source
+    .replace("KW", Object.keys(KEYWORDS).join("|")),
+  "g",
+);
 
 function highlightLine(line: string): Segment[] {
   const segments: Segment[] = [];
@@ -136,7 +142,7 @@ export function CodePanel({ source, currentLine, currentCol, currentColEnd, file
       style={{
         width,
         flexShrink: 0,
-        height: "100vh",
+        height: "100%",
         position: "relative",
         background: colors.codeBg,
         borderLeft: `1px solid ${colors.border}`,
@@ -147,6 +153,7 @@ export function CodePanel({ source, currentLine, currentCol, currentColEnd, file
       }}
     >
       <div
+        className="col-resize"
         onMouseDown={() => { dragging.current = true; }}
         style={{
           position: "absolute",
@@ -176,7 +183,7 @@ export function CodePanel({ source, currentLine, currentCol, currentColEnd, file
           <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#27c93f" }} />
         </div>
         <span style={{ fontFamily: fonts.mono, fontSize: 12, color: colors.textSecondary, flex: 1 }}>
-          {filename ?? "source.snek"}{dirty ? " •" : ""}
+          {filename ?? "source.orbs"}{dirty ? " •" : ""}
         </span>
         <button
           onClick={save}

@@ -1,0 +1,14 @@
+# overload.orbs — same name, different parameter counts
+fn add(a, b) { return a + b; }
+fn add(a, b, c) { return a + b + c; }
+print add(1, 2);            # picks add/2
+print add(1, 2, 3);         # picks add/3
+
+class Point {
+  let x; let y;
+  fn init() { self.x = 0; self.y = 0; }        # new Point()
+  fn init(x, y) { self.x = x; self.y = y; }    # new Point(3, 4)
+  fn show() { return "(" + str(self.x) + ", " + str(self.y) + ")"; }
+}
+print new Point().show();
+print new Point(3, 4).show();

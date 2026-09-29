@@ -1,4 +1,5 @@
 import type { ComponentChildren } from "preact";
+import { useState } from "preact/hooks";
 import type { Explanation } from "../compiler/trace";
 import { GLOSSARY } from "../compiler/messages/glossary";
 import type { GlossaryEntry } from "../compiler/messages/glossary";
@@ -50,14 +51,57 @@ export function Term({ entry, children }: { entry: GlossaryEntry; children: Comp
   );
 }
 
-const CELLS: { key: keyof Explanation; title: string; mono?: boolean }[] = [
-  { key: "what", title: "What happened" },
-  { key: "why", title: "Why (theory)" },
-  { key: "formal", title: "Formal notation", mono: true },
-  { key: "next", title: "What's next" },
+const CELLS: { key: keyof Explanation; title: string; short: string; mono?: boolean }[] = [
+  { key: "what", title: "What happened", short: "What" },
+  { key: "why", title: "Why (theory)", short: "Why" },
+  { key: "formal", title: "Formal notation", short: "Formal", mono: true },
+  { key: "next", title: "What's next", short: "Next" },
 ];
 
-export function ExplanationGrid({ explain }: { explain?: Explanation }) {
+const TAB_ROW = 22;
+
+// Phone: one cell at a time behind a tab row, same total height as the grid,
+// and the text scrolls instead of clamping (touch has no title tooltip).
+function ExplanationTabs({ explain }: { explain?: Explanation }) {
+  const [tab, setTab] = useState<keyof Explanation>("what");
+  const cell = CELLS.find((c) => c.key === tab)!;
+  return (
+    <div style={{ height: EXPLANATION_GRID_HEIGHT, display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ display: "flex", gap: 4, height: TAB_ROW, flexShrink: 0 }}>
+        {CELLS.map(({ key, short }) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            style={{
+              flex: 1, minWidth: 0, padding: 0, borderRadius: 6, cursor: "pointer",
+              border: `1px solid ${key === tab ? colors.nodeActive : colors.glassBorder}`,
+              background: key === tab ? colors.nodeActiveGlow : "transparent",
+              color: key === tab ? colors.textPrimary : colors.textSecondary,
+              fontFamily: fonts.base, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase",
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+            }}
+          >
+            {short}
+          </button>
+        ))}
+      </div>
+      <div
+        className="step-fade-in"
+        key={tab + (explain ? explain.what + explain.formal : "")}
+        style={{
+          flex: 1, minHeight: 0, overflowY: "auto",
+          fontFamily: cell.mono ? fonts.mono : fonts.base, fontSize: cell.mono ? 11.5 : 12.5, lineHeight: "16px",
+          color: cell.mono ? colors.accent : colors.textPrimary,
+        }}
+      >
+        {linkTerms(explain?.[tab] ?? "", new Set())}
+      </div>
+    </div>
+  );
+}
+
+export function ExplanationGrid({ explain, tabs }: { explain?: Explanation; tabs?: boolean }) {
+  if (tabs) return <ExplanationTabs explain={explain} />;
   const seen = new Set<GlossaryEntry>();
   return (
     <div

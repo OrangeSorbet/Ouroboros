@@ -185,6 +185,10 @@ export function ElkGraph({ nodes, edges, direction = "RIGHT", startNodeId, empty
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [userView, setUserView] = useState<ViewBox | null>(null);
   const drag = useRef<{ x: number; y: number; view: ViewBox } | null>(null);
+  // Touch: live pointers, and the pinch in progress (start distance, start
+  // view, and the fingers' midpoint in SVG units — the point that stays put).
+  const pointers = useRef(new Map<number, Pt>());
+  const pinch = useRef<{ dist: number; view: ViewBox; mid: Pt } | null>(null);
 
   // Edges whose endpoints aren't in `nodes` would make ELK reject the whole
   // graph — drop them rather than blanking the view.
@@ -256,18 +260,42 @@ export function ElkGraph({ nodes, edges, direction = "RIGHT", startNodeId, empty
     setUserView({ x: p.x - (p.x - view.x) * f, y: p.y - (p.y - view.y) * f, w: view.w * f, h: view.h * f });
   };
 
+  const pinchState = () => {
+    const [a, b] = [...pointers.current.values()];
+    return { dist: Math.hypot(a.x - b.x, a.y - b.y), mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } };
+  };
+
   const onPointerDown = (e: PointerEvent) => {
     if (!view || e.button !== 0) return;
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.current.size === 2) {
+      const { dist, mid } = pinchState();
+      const m = toSvg(mid.x, mid.y);
+      drag.current = null;
+      pinch.current = m && dist > 0 ? { dist, view, mid: m } : null;
+      return;
+    }
     drag.current = { x: e.clientX, y: e.clientY, view };
   };
   const onPointerMove = (e: PointerEvent) => {
+    if (pointers.current.has(e.pointerId)) pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const p = pinch.current;
+    if (p && pointers.current.size === 2) {
+      const f = p.dist / Math.max(1, pinchState().dist);
+      setUserView({ x: p.mid.x - (p.mid.x - p.view.x) * f, y: p.mid.y - (p.mid.y - p.view.y) * f, w: p.view.w * f, h: p.view.h * f });
+      return;
+    }
     const d = drag.current;
     const ctm = svgRef.current?.getScreenCTM();
     if (!d || !ctm) return;
     setUserView({ ...d.view, x: d.view.x - (e.clientX - d.x) / ctm.a, y: d.view.y - (e.clientY - d.y) / ctm.d });
   };
-  const endDrag = () => { drag.current = null; };
+  const endDrag = (e: PointerEvent) => {
+    pointers.current.delete(e.pointerId);
+    pinch.current = null;
+    drag.current = null;
+  };
 
   const markerColors = new Set<string>([colors.textPrimary]);
   const edgeViews = validEdges

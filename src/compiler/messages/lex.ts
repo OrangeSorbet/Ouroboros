@@ -46,8 +46,14 @@ const STOP_NEXT = "Lexing stops with a lexical error; no tokens reach the parser
 function moveWhy(from: State, to: State, ch: string, lexeme: string): string {
   if (from === State.START)
     return `The character class of '${showChar(ch)}' determines which branch of the DFA is entered — this is the first character of a new token.`;
-  if (to === State.BAD_NUMBER && from === State.IN_NUMBER)
-    return "Names must start with a letter, so a letter can't continue a NUMBER: the DFA enters the error pattern BAD_NUMBER, which longest match will prefer.";
+  if (to === State.BAD_NUMBER && (from === State.IN_NUMBER || from === State.IN_FLOAT))
+    return ch === "."
+      ? "A number has at most one decimal point, so a second '.' enters the error pattern BAD_NUMBER, which longest match will prefer."
+      : "Names must start with a letter, so a letter can't continue a number: the DFA enters the error pattern BAD_NUMBER, which longest match will prefer.";
+  if (to === State.NUM_DOT)
+    return "'.' after digits might start a fraction. NUM_DOT ∉ F: if no digit follows, the scanner backs up to NUMBER and '.' starts a new token.";
+  if (to === State.IN_FLOAT && from === State.NUM_DOT)
+    return "A digit after the point commits to a float literal; IN_FLOAT ∈ F.";
   if (to === State.IN_BLOCK_COMMENT && from === State.SAW_SLASH)
     return "'/*' opens a block comment. Commit rule: the scanner forgets the SAW_SLASH accept, so EOF before '*/' is an error, not SLASH STAR.";
   if (to === State.IN_BLOCK_COMMENT && from === State.BLOCK_STAR)
@@ -137,7 +143,7 @@ export function explainDiscard(state: State, lexeme: string, nextChar: string): 
 export function explainActionError(state: State, lexeme: string, message: string): Explanation {
   return {
     what: `${state} accepted "${showLexeme(lexeme)}"; its action is a lexical error: ${message}.`,
-    why: "Names must start with a letter: the first char fixes the token class, so a digit-first run is a number, and numbers allow only digits.",
+    why: "Names must start with a letter: the first char fixes the token class, so a digit-first run is a number — digits with at most one '.' inside.",
     formal: `${state} ∈ F, action(${state}) = error("${message}")`,
     next: "Lexing stops (Python reports the same SyntaxError). The partial trace stays playable.",
   };
@@ -160,7 +166,7 @@ function deadRunWhy(state: State): string {
   switch (state) {
     case State.START: return "This char begins no pattern of the language, so the run is trapped before reaching any accepting state — nothing can be emitted.";
     case State.SAW_AMP:
-    case State.SAW_PIPE: return "Snek has '&&' and '||' but no one-char '&' or '|' token, so this state ∉ F: there is no accepting prefix to back up to.";
+    case State.SAW_PIPE: return "Ouroboros has '&&' and '||' but no one-char '&' or '|' token, so this state ∉ F: there is no accepting prefix to back up to.";
     case State.IN_BLOCK_COMMENT:
     case State.BLOCK_STAR: return "Commit rule: after '/*' the scanner never backs up to SAW_SLASH, else '/* x' would silently re-lex as SLASH STAR IDENT.";
     case State.STRING_ESC: return "Only \\n \\t \\\" \\\\ are escapes: δ(STRING_ESC, c) is defined just for those classes; STRING_ESC ∉ F.";

@@ -1,6 +1,6 @@
 # Ouroboros build — shared brief for all implementation agents
 
-Repo: `C:\Users\ashvi\Documents\VS_Codes\HTML\Snek` (Preact + TypeScript + Vite, client-only).
+Repo: `C:\Users\ashvi\Documents\VS_Codes\HTML\Ouroboros` (Preact + TypeScript + Vite, client-only).
 Deadline is tomorrow. Six agents work IN PARALLEL in the same folder, each owning
 disjoint files. Read this whole brief, then `docs/phase34plan.md` (the approved
 spec — sections named in your task), then `CLAUDE.md` and `docs/rules.md`.
@@ -14,16 +14,16 @@ spec — sections named in your task), then `CLAUDE.md` and `docs/rules.md`.
 - **Compiler files (`src/compiler/**`) import each other with explicit `.ts` extensions** (`import { lex } from "./lexer.ts"`), and use only erasable TS syntax, so they run under plain `node` (v24, type stripping). Components may import extensionless like today.
 - **All human-readable prose lives in `src/compiler/messages/<file>.ts`** (you own your phase's file). Engines produce raw steps; a `describe…`/builder in the messages file produces the `Explanation`. When reusing existing text from `messages/lex.ts` or `messages/parse.ts`, move it verbatim.
 - Pedagogy (rules.md): every step explains **why in ToC terms**, not just what. Each `Explanation` cell ≤ ~160 chars, all four cells filled (`what`, `why`, `formal`, `next`). Formal cell cites the exact δ entry / production / LL(1) cell / typing rule / translation rule / optimization rule. If the visualization simplifies theory, the Why cell says so.
-- One runnable self-check per engine: `scripts/check-<phase>.ts`, assert-based (`node:assert/strict`), runnable with `node scripts/check-<phase>.ts`, exercising `src/samples/*.snek` (read with `node:fs`). No test framework. Keep it small.
+- One runnable self-check per engine: `scripts/check-<phase>.ts`, assert-based (`node:assert/strict`), runnable with `node scripts/check-<phase>.ts`, exercising `src/samples/*.orbs` (read with `node:fs`). No test framework. Keep it small.
 
 ## Contracts (already written — read them)
 - `src/compiler/trace.ts` — `PhaseId`, `Span`, `Explanation`, `TraceStep`, `Chapter`, `PhaseError`, `PhaseResult<TStep, TOutput>`. **Phases never throw**: on error return `ok:false`, the partial trace up to and including an error step (explain filled), and `error`.
 - `src/compiler/tokens.ts` — extended `TokenKind`, `KEYWORDS`, `Token {kind, lexeme, value?, line, col, endCol}`.
 - `src/compiler/ast.ts` — extended AST; every node has `id` (program-unique number) and `span`.
-- `src/compiler/semanticTypes.ts` — `SnekType`, `Resolution`, `SemanticInfo` (phase 3 → 4).
+- `src/compiler/semanticTypes.ts` — `OrbType`, `Resolution`, `SemanticInfo` (phase 3 → 4).
 - `src/compiler/irTypes.ts` — opcodes, `IrInstr`, `CodeObject`, `IrProgram`, `formatInstr` (phase 4 → 5 → 6).
 - `src/components/graph/types.ts` — `<ElkGraph>` props (built by the shell agent at `src/components/graph/ElkGraph.tsx`, `export function ElkGraph(props: ElkGraphProps)`). Phase agents code against this API even before it exists; do not build your own graph renderer.
-- Samples: `src/samples/demo.snek` (must pass all 7 phases; prints `hi`), `err-lex.snek` (lexical error: `123abc`), `err-parse.snek` (syntax error), `err-semantic.snek` (type error `x + true`), `err-runtime.snek` (divide by zero at run time — must pass phases 1–6), `err-halt.snek` (infinite loop — step cap in the VM).
+- Samples: `src/samples/demo.orbs` (must pass all 7 phases; prints `hi`), `err-lex.orbs` (lexical error: `123abc`), `err-parse.orbs` (syntax error), `err-semantic.orbs` (type error `x + true`), `err-runtime.orbs` (divide by zero at run time — must pass phases 1–6), `err-halt.orbs` (infinite loop — step cap in the VM).
 
 ## Engine function signatures (the coordinator wires exactly these)
 | Phase | File (owner) | Function |
@@ -59,7 +59,7 @@ The 2×2 explanation grid, scrubber, intro cards, glossary, flowchart, navbar be
 
 ## File ownership
 - **A (lexer):** `src/compiler/dfa.ts`, `lexer.ts`, `messages/lex.ts`, `src/components/lex/**`, `scripts/check-lex.ts`. May delete `src/components/DfaGraph.tsx`, `TransitionTable.tsx`, `TokenStream.tsx` once replaced.
-- **B (parser):** `src/compiler/grammar.ts`, `ll1.ts`, `parser.ts`, `astBuilder.ts`, `callGraph.ts`, `messages/parse.ts`, `src/components/parse/**`, `scripts/check-parse.ts`, `docs/snek-grammar.md`. May delete `src/compiler/pda.ts`, `src/components/PdaGraph.tsx`, `PdaTransitionTable.tsx`, `PdaStackView.tsx`, `ParserTokenPanel.tsx`, `scripts/test-parser.ts`.
+- **B (parser):** `src/compiler/grammar.ts`, `ll1.ts`, `parser.ts`, `astBuilder.ts`, `callGraph.ts`, `messages/parse.ts`, `src/components/parse/**`, `scripts/check-parse.ts`, `docs/ouroboros-grammar.md`. May delete `src/compiler/pda.ts`, `src/components/PdaGraph.tsx`, `PdaTransitionTable.tsx`, `PdaStackView.tsx`, `ParserTokenPanel.tsx`, `scripts/test-parser.ts`.
 - **C (semantic):** `src/compiler/semantic.ts`, `messages/semantic.ts`, `src/components/semantic/**`, `scripts/check-semantic.ts`.
 - **D1 (IR + optimizer):** `src/compiler/irgen.ts`, `optimize.ts`, `messages/ir.ts`, `messages/opt.ts`, `src/components/ir/**`, `src/components/opt/**`, `scripts/check-ir.ts`, `scripts/check-opt.ts`.
 - **D2 (bytecode + VM):** `src/compiler/bytecode.ts`, `vm.ts`, `messages/bytecode.ts`, `messages/vm.ts`, `src/components/bytecode/**`, `src/components/vm/**`, `scripts/check-bytecode.ts`, `scripts/check-vm.ts`.

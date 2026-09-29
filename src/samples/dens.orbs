@@ -1,0 +1,10 @@
+# dens.orbs — a den maps keys to values (a hash map)
+let ages = @{ "rex": 3, "kaa": 7 };
+ages["nag"] = 2;
+print ages["kaa"];          # 7
+print ages.has("tom");      # false
+for name in ages { print name + " is " + str(ages[name]); }
+ages.remove("rex");
+print ages.keys();          # ["kaa", "nag"]
+let grid = @{ @(0, 0): "start", @(2, 3): "goal" };  # scales are hashable keys
+print grid[@(2, 3)];        # goal

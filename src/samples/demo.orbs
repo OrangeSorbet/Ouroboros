@@ -1,4 +1,4 @@
-# demo.snek
+# demo.orbs
 fn square(n) {
   return n * n;
 }

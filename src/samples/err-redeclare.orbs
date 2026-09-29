@@ -1,0 +1,5 @@
+# err-redeclare.orbs — `let` twice in one scope is a Phase 3 error
+let x = 10;
+let y = 9;
+let x = 5;              # to reassign, write `x = 5;` instead
+print x + y;

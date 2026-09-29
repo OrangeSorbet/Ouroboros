@@ -1,4 +1,4 @@
-// Snek's context-free grammar as data — the single source of truth for the
+// Ouroboros's context-free grammar as data — the single source of truth for the
 // syntax phase. ll1.ts computes FIRST/FOLLOW/M from it, parser.ts (the PDA)
 // is driven by M, callGraph.ts derives the call graph from it, and the UI
 // prints both notations from here, so the grammar can never drift between
@@ -14,18 +14,29 @@ import { TokenKind } from "./tokens.ts";
 const BNF_TEXT = `
 Program        -> DeclList EOF
 DeclList       -> Decl DeclList | ε
-Decl           -> FuncDecl | Statement
+Decl           -> FuncDecl | ClassDecl | Statement
 FuncDecl       -> fn IDENT ( ParamsOpt ) Block
 ParamsOpt      -> Params | ε
 Params         -> IDENT ParamsTail
 ParamsTail     -> , IDENT ParamsTail | ε
+ClassDecl      -> AbstractOpt class IDENT ParentOpt { MemberList }
+AbstractOpt    -> abstract | ε
+ParentOpt      -> : IDENT | ε
+MemberList     -> Member MemberList | ε
+Member         -> VisOpt MemberBody
+VisOpt         -> priv | ε
+MemberBody     -> FieldDecl | FuncDecl | AbstractFn
+AbstractFn     -> abstract fn IDENT ( ParamsOpt ) ;
+FieldDecl      -> let IDENT FieldInit ;
+FieldInit      -> = Expr | ε
 Statement      -> LetStmt | PrintStmt | IfStmt | WhileStmt | ForStmt | ReturnStmt | Block | ExprStmt
 LetStmt        -> let IDENT = Expr ;
 PrintStmt      -> print Expr ;
 IfStmt         -> if ( Expr ) Block ElseOpt
 ElseOpt        -> else Block | ε
 WhileStmt      -> while ( Expr ) Block
-ForStmt        -> for ( ForInit ExprOpt ; SimpleOpt ) Block
+ForStmt        -> for ForRest
+ForRest        -> ( ForInit ExprOpt ; SimpleOpt ) Block | IDENT in Expr Block
 ForInit        -> LetStmt | ExprStmt | ;
 ExprOpt        -> Expr | ε
 SimpleOpt      -> SimpleStmt | ε
@@ -51,25 +62,30 @@ AdditiveTail   -> AddOp Multiplicative AdditiveTail | ε
 AddOp          -> + | -
 Multiplicative -> Unary MultiplicativeTail
 MultiplicativeTail -> MulOp Unary MultiplicativeTail | ε
-MulOp          -> * | /
+MulOp          -> * | / | %
 Unary          -> - Unary | ! Unary | Postfix
 Postfix        -> Primary PostfixTail
-PostfixTail    -> ( ArgsOpt ) PostfixTail | [ Expr ] PostfixTail | ε
+PostfixTail    -> ( ArgsOpt ) PostfixTail | [ Expr ] PostfixTail | . IDENT PostfixTail | ε
 ArgsOpt        -> Args | ε
 Args           -> Expr ArgsTail
 ArgsTail       -> , Expr ArgsTail | ε
-Primary        -> NUMBER | STRING | IDENT | true | false | ( Expr ) | [ ArgsOpt ]
+Primary        -> NUMBER | FLOAT | STRING | IDENT | true | false | none | ( Expr ) | [ ArgsOpt ] | @ AtLit | self | super . IDENT | new IDENT ( ArgsOpt )
+AtLit          -> ( ArgsOpt ) | [ ArgsOpt ] | { PairsOpt }
+PairsOpt       -> Pairs | ε
+Pairs          -> Expr : Expr PairsTail
+PairsTail      -> , Expr : Expr PairsTail | ε
 `;
 
 // How each terminal is written in the grammar text / on screen.
 export const TERMINAL_TEXT: Record<TokenKind, string> = {
-  IDENT: "IDENT", NUMBER: "NUMBER", STRING: "STRING",
+  IDENT: "IDENT", NUMBER: "NUMBER", FLOAT: "FLOAT", STRING: "STRING",
   LET: "let", PRINT: "print", IF: "if", ELSE: "else", WHILE: "while", FOR: "for",
-  FN: "fn", RETURN: "return", TRUE: "true", FALSE: "false",
-  PLUS: "+", MINUS: "-", STAR: "*", SLASH: "/", ASSIGN: "=", EQ: "==", NEQ: "!=",
+  FN: "fn", RETURN: "return", TRUE: "true", FALSE: "false", NONE: "none", IN: "in",
+  CLASS: "class", NEW: "new", SELF: "self", SUPER: "super", ABSTRACT: "abstract", PRIV: "priv",
+  PLUS: "+", MINUS: "-", STAR: "*", SLASH: "/", PERCENT: "%", ASSIGN: "=", EQ: "==", NEQ: "!=",
   LT: "<", GT: ">", LTE: "<=", GTE: ">=", AND: "&&", OR: "||", NOT: "!",
   LPAREN: "(", RPAREN: ")", LBRACE: "{", RBRACE: "}", LBRACKET: "[", RBRACKET: "]",
-  COMMA: ",", SEMI: ";",
+  COMMA: ",", SEMI: ";", DOT: ".", COLON: ":", AT: "@",
   EOF: "EOF",
 };
 

@@ -1,0 +1,13 @@
+# coils.orbs — a coil is a growable list
+let xs = [3, 1, 2];
+xs.push(5);
+print xs;               # [3, 1, 2, 5]
+print xs.pop();         # 5
+print len(xs);          # 3
+let total = 0;
+for x in xs { total = total + x; }
+print total;            # 6
+print xs.has(2);        # true
+let ys = xs;            # ys and xs are two #refs to ONE coil on the heap
+ys.push(9);
+print xs;               # [3, 1, 2, 9]

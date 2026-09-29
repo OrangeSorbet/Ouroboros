@@ -1,0 +1,10 @@
+# floats.orbs — an int meeting a float widens; never the other way
+let pi = 3.14;
+let r = 2;
+let area = pi * r * r;
+print area;             # 12.56
+print 7.0 / 2;          # 3.5 (7 / 2 would be 3)
+print int(area);        # 12: explicit conversion back
+print float(r) + 0.5;   # 2.5
+print str(r) + " units";
+print 0.1 + 0.2 == 0.3; # false: binary floating point

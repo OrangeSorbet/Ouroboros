@@ -18,6 +18,7 @@ export function PdaConfig({ step, tokens }: { step: PdaStep; tokens: Token[] }) 
 
   return (
     <div
+      className="rsp-side"
       style={{
         width: 250, flexShrink: 0, display: "flex", flexDirection: "column", minHeight: 0,
         borderLeft: `1px solid ${colors.border}`, background: colors.panelBackground, fontFamily: fonts.mono, fontSize: 11,

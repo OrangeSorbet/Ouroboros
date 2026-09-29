@@ -48,7 +48,7 @@ export function AsmView({ result, index }: AsmViewProps) {
         Code object <span style={{ fontFamily: fonts.mono, color: colors.nodeActive }}>{step.code}</span>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
+      <div className="rsp-grid3" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
         <Table title="co_consts" items={t.consts} show={step.tablesShown >= 1} />
         <Table title="co_names (globals)" items={t.names} show={step.tablesShown >= 2} />
         <Table title="co_varnames (slots)" items={t.varnames} show={step.tablesShown >= 3} />

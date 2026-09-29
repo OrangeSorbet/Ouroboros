@@ -12,6 +12,7 @@
 import type * as A from "./ast.ts";
 import type { SemanticInfo, CodeScopeInfo } from "./semanticTypes.ts";
 import { BINARY_OPS, COMPARE_OPS, formatInstr } from "./irTypes.ts";
+import { BUILTINS } from "./values.ts";
 import type { CodeObject, IrConst, IrInstr, IrProgram, Opcode } from "./irTypes.ts";
 import type { Chapter, Explanation, PhaseResult, TraceStep } from "./trace.ts";
 import { IR_RULES, irMessages } from "./messages/ir.ts";
@@ -57,7 +58,7 @@ class Generator {
 
   constructor(sem: SemanticInfo) {
     this.sem = sem;
-    this.program = { main: newCode(sem.main), functions: sem.functions.map(newCode) };
+    this.program = { main: newCode(sem.main), functions: sem.functions.map(newCode), classes: sem.classes };
     this.cur = this.program.main;
     this.pending.set(this.cur, new Set());
     for (const f of this.program.functions) this.pending.set(f, new Set());
@@ -149,15 +150,47 @@ class Generator {
   // ---- declarations / statements ----
 
   decl(d: A.Decl) {
+    if (d.kind === "ClassDecl") return this.classDecl(d);
     if (d.kind !== "FuncDecl") return this.stmt(d);
-    const code = this.program.functions.find((f) => f.name === d.name);
-    if (!code) throw new Error(`no code object for fn ${d.name}`);
-    this.cur = code;
-    this.step("begin-code", d, irMessages.beginCode(d.name, d.params.map((p) => p.name)), `open code object ${d.name}`);
+    this.funcBody(d, this.sem.fnCode.get(d.id) ?? d.name);
+  }
+
+  code(name: string): CodeObject {
+    const code = this.program.functions.find((f) => f.name === name);
+    if (!code) throw new Error(`no code object ${name}`);
+    return code;
+  }
+
+  // A function or method body into its own code object (methods are named
+  // "Class.method" and have self in slot 0).
+  funcBody(d: A.FuncDecl, codeName: string) {
+    this.cur = this.code(codeName);
+    this.step("begin-code", d, irMessages.beginCode(codeName, this.cur.params), `open code object ${codeName}`);
     this.stmt(d.body);
     this.returnNone(d, IR_RULES.FuncDecl, true);
     this.finish(d);
     this.cur = this.program.main;
+  }
+
+  // A class is only code objects: its field initializers, then its methods.
+  classDecl(c: A.ClassDecl) {
+    const info = this.sem.classes.find((x) => x.name === c.name)!;
+    if (info.fieldsCode) {
+      this.cur = this.code(info.fieldsCode);
+      this.step("begin-code", c, irMessages.beginCode(info.fieldsCode, ["self"]), `open code object ${info.fieldsCode}`);
+      for (const f of c.fields) {
+        if (!f.init) continue;
+        this.enter(f, `${f.name} =`, IR_RULES.FieldInit);
+        this.expr(f.init);
+        this.emit("LOAD_FAST", f, IR_RULES.FieldInit, { arg: 0 });
+        this.emit("STORE_ATTR", f, IR_RULES.FieldInit, { arg: this.nameIndex(f.name) });
+        this.finish(f);
+      }
+      this.returnNone(c, IR_RULES.FieldInit, true);
+      this.cur = this.program.main;
+    }
+    for (const m of c.methods) this.funcBody(m, this.sem.fnCode.get(m.id)!);
+    this.finish(c);
   }
 
   stmt(s: A.Stmt): void {
@@ -172,6 +205,12 @@ class Generator {
           this.enter(s, `${s.target.name} =`, IR_RULES.AssignName);
           this.expr(s.value);
           this.emit("STORE_FAST", s, IR_RULES.AssignName, { arg: this.slotOf(s.target.id, s.target.name) });
+          this.finish(s.target);
+        } else if (s.target.kind === "MemberExpr") {
+          this.enter(s, `.${s.target.name} =`, IR_RULES.AssignField);
+          this.expr(s.value);
+          this.expr(s.target.object);
+          this.emit("STORE_ATTR", s, IR_RULES.AssignField, { arg: this.nameIndex(s.target.name) });
           this.finish(s.target);
         } else if (s.target.kind === "IndexExpr") {
           this.enter(s, "[…] =", IR_RULES.AssignIndex);
@@ -231,6 +270,22 @@ class Generator {
         this.place(lEnd, s, jEnd);
         break;
       }
+      case "ForEachStmt": {
+        // code(e) · GET_ITER · top: FOR_ITER end · STORE_FAST x · body · JUMP_BACKWARD top · end:
+        const r = IR_RULES.ForEach;
+        this.enter(s, `${s.name} in`, r);
+        this.expr(s.iterable);
+        this.emit("GET_ITER", s, r);
+        const lTop = this.newLabel();
+        this.place(lTop, s);
+        const lEnd = this.newLabel();
+        const jEnd = this.emit("FOR_ITER", s, r, { target: lEnd, pending: true });
+        this.emit("STORE_FAST", s, r, { arg: this.sem.declSlots.get(s.id) ?? this.missing(s.name) });
+        this.stmt(s.body);
+        this.emit("JUMP_BACKWARD", s, r, { target: lTop });
+        this.place(lEnd, s, jEnd);
+        break;
+      }
       case "ForStmt": {
         const tree = this.desugar(s);
         this.step("desugar", s, irMessages.desugar(), "desugar for → while", { tree });
@@ -262,6 +317,8 @@ class Generator {
   expr(e: A.Expr): void {
     switch (e.kind) {
       case "NumberLiteral":
+      case "FloatLiteral":
+      case "NoneLiteral":
       case "StringLiteral":
       case "BoolLiteral":
         this.emit("LOAD_CONST", e, IR_RULES.Literal, { arg: this.constIndex(e.value) });
@@ -273,6 +330,36 @@ class Generator {
         this.enter(e, `[${e.elements.length}]`, IR_RULES.ArrayLiteral);
         for (const x of e.elements) this.expr(x);
         this.emit("BUILD_LIST", e, IR_RULES.ArrayLiteral, { arg: e.elements.length });
+        break;
+      case "ScaleLiteral":
+      case "ClutchLiteral": {
+        const scale = e.kind === "ScaleLiteral";
+        const rule = scale ? IR_RULES.ScaleLiteral : IR_RULES.ClutchLiteral;
+        this.enter(e, `${scale ? "@(" : "@["}${e.elements.length}${scale ? ")" : "]"}`, rule);
+        for (const x of e.elements) this.expr(x);
+        this.emit(scale ? "BUILD_SCALE" : "BUILD_CLUTCH", e, rule, { arg: e.elements.length });
+        break;
+      }
+      case "DenLiteral":
+        this.enter(e, `@{${e.entries.length}}`, IR_RULES.DenLiteral);
+        for (const x of e.entries) { this.expr(x.key); this.expr(x.value); }
+        this.emit("BUILD_DEN", e, IR_RULES.DenLiteral, { arg: e.entries.length });
+        break;
+      case "MemberExpr":
+        this.enter(e, `.${e.name}`, IR_RULES.FieldRead);
+        this.expr(e.object);
+        this.emit("LOAD_ATTR", e, IR_RULES.FieldRead, { arg: this.nameIndex(e.name) });
+        break;
+      case "SelfExpr":
+        this.emit("LOAD_FAST", e, IR_RULES.Self, { arg: 0 });
+        break;
+      case "SuperExpr":
+        throw new Error("super.m must be called (Phase 3 rejects bare super.m)");
+      case "NewExpr":
+        this.enter(e, `new ${e.className}`, IR_RULES.NewExpr);
+        this.emit("LOAD_GLOBAL", e, IR_RULES.NewExpr, { arg: this.nameIndex(e.className) });
+        for (const a of e.args) this.expr(a);
+        this.emit("CALL", e, IR_RULES.NewExpr, { arg: e.args.length });
         break;
       case "BinaryExpr": {
         const cmp = (COMPARE_OPS as readonly string[]).indexOf(e.operator);
@@ -300,8 +387,36 @@ class Generator {
         this.emit(e.operator === "-" ? "UNARY_NEGATIVE" : "UNARY_NOT", e, IR_RULES.UnaryExpr);
         break;
       case "CallExpr": {
+        if (e.callee.kind === "MemberExpr") {
+          const m = e.callee;
+          this.enter(e, `.${m.name}(…)`, IR_RULES.MethodCall);
+          this.expr(m.object);
+          this.emit("LOAD_METHOD", m, IR_RULES.MethodCall, { arg: this.nameIndex(m.name) });
+          this.finish(m);
+          for (const a of e.args) this.expr(a);
+          this.emit("CALL", e, IR_RULES.MethodCall, { arg: e.args.length });
+          break;
+        }
+        if (e.callee.kind === "SuperExpr") {
+          const r = this.sem.resolutions.get(e.callee.id);
+          if (r?.kind !== "function") throw new Error("super call was not resolved");
+          this.enter(e, `super.${e.callee.name}(…)`, IR_RULES.SuperCall);
+          this.emit("LOAD_GLOBAL", e.callee, IR_RULES.SuperCall, { arg: this.nameIndex(r.name) });
+          this.emit("LOAD_FAST", e.callee, IR_RULES.SuperCall, { arg: 0 });
+          this.finish(e.callee);
+          for (const a of e.args) this.expr(a);
+          this.emit("CALL", e, IR_RULES.SuperCall, { arg: e.args.length + 1 });
+          break;
+        }
         if (e.callee.kind !== "Identifier") throw new Error("only a named function can be called");
         const r = this.sem.resolutions.get(e.callee.id);
+        if (r?.kind === "builtin") {
+          this.enter(e, `${r.name}(…)`, IR_RULES.Builtin);
+          this.finish(e.callee);
+          for (const a of e.args) this.expr(a);
+          this.emit("CALL_BUILTIN", e, IR_RULES.Builtin, { arg: (BUILTINS as readonly string[]).indexOf(r.name) });
+          break;
+        }
         const name = r?.kind === "function" ? r.name : e.callee.name;
         this.enter(e, `${name}(…)`, IR_RULES.CallExpr);
         this.emit("LOAD_GLOBAL", e.callee, IR_RULES.CallExpr, { arg: this.nameIndex(name) });
@@ -324,12 +439,14 @@ class Generator {
 function itemLabel(d: A.Decl): string {
   switch (d.kind) {
     case "FuncDecl": return `fn ${d.name}`;
+    case "ClassDecl": return `class ${d.name}`;
     case "LetStmt": return `let ${d.name}`;
     case "AssignStmt": return d.target.kind === "Identifier" ? `${d.target.name} =` : "assign";
     case "PrintStmt": return "print";
     case "IfStmt": return "if";
     case "WhileStmt": return "while";
     case "ForStmt": return "for";
+    case "ForEachStmt": return `for ${d.name} in`;
     case "ReturnStmt": return "return";
     case "Block": return "block";
     case "ExprStmt": return "expr";

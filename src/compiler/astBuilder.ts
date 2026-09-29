@@ -12,8 +12,8 @@
 import type { ParseNode } from "./parser.ts";
 import type { Span } from "./trace.ts";
 import type {
-  Program, Decl, FuncDecl, Param, Stmt, LetStmt, AssignStmt, ExprStmt, IfStmt, WhileStmt,
-  ForStmt, ReturnStmt, PrintStmt, Block, Expr, BinaryOperator,
+  Program, Decl, FuncDecl, ClassDecl, FieldDecl, AbstractMethod, Param, Stmt, LetStmt, AssignStmt, ExprStmt, IfStmt, WhileStmt,
+  ForStmt, ForEachStmt, ReturnStmt, PrintStmt, Block, Expr, BinaryOperator,
 } from "./ast.ts";
 
 export function buildAst(root: ParseNode): Program {
@@ -48,19 +48,52 @@ export function buildAst(root: ParseNode): Program {
 
   function decl(n: ParseNode): Decl {
     const inner = c(n, 0);
-    return inner.symbol === "FuncDecl" ? funcDecl(inner) : statement(inner);
+    if (inner.symbol === "FuncDecl") return funcDecl(inner);
+    if (inner.symbol === "ClassDecl") return classDecl(inner);
+    return statement(inner);
   }
 
-  function funcDecl(n: ParseNode): FuncDecl {
-    const params: Param[] = [];
-    const paramsOpt = c(n, 3);
+  // ClassDecl → AbstractOpt class IDENT ParentOpt { MemberList }
+  // Member → VisOpt MemberBody; MemberBody → FieldDecl | FuncDecl | AbstractFn
+  function classDecl(n: ParseNode): ClassDecl {
+    const parentOpt = c(n, 3);
+    const fields: FieldDecl[] = [];
+    const methods: FuncDecl[] = [];
+    const abstractMethods: AbstractMethod[] = [];
+    for (const m of list(c(n, 5), 0, 1)) {
+      const priv = !isEps(c(m, 0));
+      const inner = c(c(m, 1), 0);
+      if (inner.symbol === "FuncDecl") { methods.push({ ...funcDecl(inner), priv }); continue; }
+      if (inner.symbol === "AbstractFn") { // abstract fn IDENT ( ParamsOpt ) ;
+        abstractMethods.push({ kind: "AbstractMethod", id: id(), span: spanOf(inner), name: c(inner, 2).token!.lexeme, params: params(c(inner, 4)) });
+        continue;
+      }
+      const initOpt = c(inner, 2); // FieldDecl → let IDENT FieldInit ;
+      fields.push({
+        kind: "FieldDecl", id: id(), span: spanOf(inner), name: c(inner, 1).token!.lexeme, priv,
+        init: isEps(initOpt) ? null : expr(c(initOpt, 1)),
+      });
+    }
+    return {
+      kind: "ClassDecl", id: id(), span: spanOf(n), name: c(n, 2).token!.lexeme, abstract: !isEps(c(n, 0)),
+      parent: isEps(parentOpt) ? null : c(parentOpt, 1).token!.lexeme, fields, methods, abstractMethods,
+    };
+  }
+
+  // ParamsOpt → Params | ε (shared by fn declarations and abstract fns)
+  function params(paramsOpt: ParseNode): Param[] {
+    const out: Param[] = [];
     if (!isEps(paramsOpt)) {
       const ps = c(paramsOpt, 0);
       for (const tok of [c(ps, 0), ...list(c(ps, 1), 1, 2)]) {
-        params.push({ kind: "Param", id: id(), span: tokSpan(tok), name: tok.token!.lexeme });
+        out.push({ kind: "Param", id: id(), span: tokSpan(tok), name: tok.token!.lexeme });
       }
     }
-    return { kind: "FuncDecl", id: id(), span: spanOf(n), name: c(n, 1).token!.lexeme, params, body: block(c(n, 5)) };
+    return out;
+  }
+
+  function funcDecl(n: ParseNode): FuncDecl {
+    return { kind: "FuncDecl", id: id(), span: spanOf(n), name: c(n, 1).token!.lexeme, params: params(c(n, 3)), body: block(c(n, 5)) };
   }
 
   function statement(n: ParseNode): Stmt {
@@ -99,18 +132,24 @@ export function buildAst(root: ParseNode): Program {
     return { kind: "AssignStmt", id: id(), span, target: lhs, value: expr(c(tail, 1)) };
   }
 
-  function forStmt(n: ParseNode): ForStmt {
-    const initNode = c(c(n, 2), 0); // ForInit → LetStmt | ExprStmt | ;
+  // ForStmt → for ForRest; ForRest is either the C-style header or
+  // `IDENT in Expr Block` (left-factored on `for`, so one lookahead picks).
+  function forStmt(n: ParseNode): ForStmt | ForEachStmt {
+    const r = c(n, 1);
+    if (c(r, 0).symbol === "IDENT") {
+      return { kind: "ForEachStmt", id: id(), span: spanOf(n), name: c(r, 0).token!.lexeme, iterable: expr(c(r, 2)), body: block(c(r, 3)) };
+    }
+    const initNode = c(c(r, 1), 0); // ForInit → LetStmt | ExprStmt | ;
     const init = initNode.symbol === "LetStmt" ? letStmt(initNode)
       : initNode.symbol === "ExprStmt" ? simpleStmt(c(initNode, 0), spanOf(initNode))
       : null;
-    const condOpt = c(n, 3);
-    const updOpt = c(n, 5);
+    const condOpt = c(r, 2);
+    const updOpt = c(r, 4);
     return {
       kind: "ForStmt", id: id(), span: spanOf(n), init,
       condition: isEps(condOpt) ? null : expr(c(condOpt, 0)),
       update: isEps(updOpt) ? null : simpleStmt(c(updOpt, 0), spanOf(updOpt)),
-      body: block(c(n, 7)),
+      body: block(c(r, 6)),
     };
   }
 
@@ -154,10 +193,16 @@ export function buildAst(root: ParseNode): Program {
   }
 
   // Postfix → Primary PostfixTail; each non-ε tail wraps what's built so far,
-  // so f(x)[0] becomes Index(Call(f, x), 0) — also a left fold.
+  // so f(x)[0] becomes Index(Call(f, x), 0) and xs.push(1) becomes
+  // Call(Member(xs, push), 1) — also a left fold.
   function postfix(n: ParseNode): Expr {
     let e = expr(c(n, 0));
     for (let tail = c(n, 1); !isEps(tail); tail = c(tail, tail.children.length - 1)) {
+      if (c(tail, 0).symbol === "DOT") {
+        const nameTok = c(tail, 1);
+        e = { kind: "MemberExpr", id: id(), span: join(e.span, tokSpan(nameTok)), object: e, name: nameTok.token!.lexeme };
+        continue;
+      }
       const close = tokSpan(c(tail, 2));
       e = c(tail, 0).symbol === "LPAREN"
         ? { kind: "CallExpr", id: id(), span: join(e.span, close), callee: e, args: argsOpt(c(tail, 1)) }
@@ -178,13 +223,34 @@ export function buildAst(root: ParseNode): Program {
     const span = spanOf(n);
     switch (t.kind) {
       case "NUMBER": return { kind: "NumberLiteral", id: id(), span, value: BigInt(t.lexeme) };
+      case "FLOAT": return { kind: "FloatLiteral", id: id(), span, value: Number(t.lexeme) };
+      case "NONE": return { kind: "NoneLiteral", id: id(), span, value: null };
       case "STRING": return { kind: "StringLiteral", id: id(), span, value: t.value ?? t.lexeme.slice(1, -1) };
       case "IDENT": return { kind: "Identifier", id: id(), span, name: t.lexeme };
       case "TRUE": return { kind: "BoolLiteral", id: id(), span, value: true };
       case "FALSE": return { kind: "BoolLiteral", id: id(), span, value: false };
       case "LPAREN": return expr(c(n, 1)); // parentheses only grouped; the tree shape already records it
+      case "AT": return atLit(c(n, 1), span);
+      case "SELF": return { kind: "SelfExpr", id: id(), span };
+      case "SUPER": return { kind: "SuperExpr", id: id(), span, name: c(n, 2).token!.lexeme };
+      case "NEW": return { kind: "NewExpr", id: id(), span, className: c(n, 1).token!.lexeme, args: argsOpt(c(n, 3)) };
       default: return { kind: "ArrayLiteral", id: id(), span, elements: argsOpt(c(n, 1)) }; // [ ArgsOpt ]
     }
+  }
+
+  // AtLit → ( ArgsOpt ) | [ ArgsOpt ] | { PairsOpt }
+  function atLit(n: ParseNode, span: Span): Expr {
+    const open = c(n, 0).symbol;
+    if (open === "LPAREN") return { kind: "ScaleLiteral", id: id(), span, elements: argsOpt(c(n, 1)) };
+    if (open === "LBRACKET") return { kind: "ClutchLiteral", id: id(), span, elements: argsOpt(c(n, 1)) };
+    const entries: { key: Expr; value: Expr }[] = [];
+    const opt = c(n, 1);
+    if (!isEps(opt)) {
+      const pairs = c(opt, 0); // Pairs → Expr : Expr PairsTail
+      entries.push({ key: expr(c(pairs, 0)), value: expr(c(pairs, 2)) });
+      for (let t = c(pairs, 3); !isEps(t); t = c(t, 4)) entries.push({ key: expr(c(t, 1)), value: expr(c(t, 3)) });
+    }
+    return { kind: "DenLiteral", id: id(), span, entries };
   }
 
   return program(root);

@@ -3,14 +3,15 @@ import { fonts } from "../styles/fonts";
 
 interface FileUploadProps {
   onLoad: (source: string, filename: string) => void;
+  compact?: boolean; // phone navbar: shorter labels, tighter padding
 }
 
 // Bundled at build time, so the samples work with no server or upload.
-const SAMPLE_FILES = import.meta.glob<string>("../samples/*.snek", { query: "?raw", import: "default", eager: true });
+const SAMPLE_FILES = import.meta.glob<string>("../samples/*.orbs", { query: "?raw", import: "default", eager: true });
 const SAMPLES = Object.entries(SAMPLE_FILES)
   .map(([path, text]) => ({ name: path.slice(path.lastIndexOf("/") + 1), text }))
   // demo first (the curated walkthrough), then the error samples A–Z
-  .sort((a, b) => (a.name === "demo.snek" ? -1 : b.name === "demo.snek" ? 1 : a.name.localeCompare(b.name)));
+  .sort((a, b) => (a.name === "demo.orbs" ? -1 : b.name === "demo.orbs" ? 1 : a.name.localeCompare(b.name)));
 
 const controlStyle = {
   display: "inline-flex",
@@ -25,7 +26,8 @@ const controlStyle = {
   cursor: "pointer",
 } as const;
 
-export function FileUpload({ onLoad }: FileUploadProps) {
+export function FileUpload({ onLoad, compact }: FileUploadProps) {
+  const control = compact ? { ...controlStyle, padding: "7px 8px", fontSize: 12 } : controlStyle;
   const handleChange = (e: Event) => {
     const input = e.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -49,16 +51,16 @@ export function FileUpload({ onLoad }: FileUploadProps) {
         value=""
         onChange={handleSample}
         title="Load a bundled sample program"
-        style={{ ...controlStyle, border: `1px solid ${colors.uploadBorder}`, appearance: "auto" }}
+        style={{ ...control, border: `1px solid ${colors.uploadBorder}`, appearance: "auto", minWidth: 0, maxWidth: compact ? 110 : undefined }}
       >
-        <option value="" disabled>Load sample…</option>
+        <option value="" disabled>{compact ? "Sample…" : "Load sample…"}</option>
         {SAMPLES.map((s) => (
           <option key={s.name} value={s.name}>{s.name}</option>
         ))}
       </select>
-      <label style={{ ...controlStyle, border: `1px dashed ${colors.uploadBorder}` }}>
-        <span>Upload .snek file</span>
-        <input type="file" accept=".snek" onChange={handleChange} style={{ display: "none" }} />
+      <label style={{ ...control, border: `1px dashed ${colors.uploadBorder}`, flexShrink: 0 }}>
+        <span>{compact ? "Upload" : "Upload .orbs file"}</span>
+        <input type="file" accept=".orbs" onChange={handleChange} style={{ display: "none" }} />
       </label>
     </div>
   );

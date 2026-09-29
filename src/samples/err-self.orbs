@@ -1,0 +1,3 @@
+# err-self.orbs — self only exists inside a method
+fn area() { return self.w * self.h; }
+print area();

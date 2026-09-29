@@ -7,7 +7,7 @@ import { analyze } from "../src/compiler/semantic.ts";
 import { generate } from "../src/compiler/irgen.ts";
 import { formatInstr } from "../src/compiler/irTypes.ts";
 
-const src = readFileSync(new URL("../src/samples/demo.snek", import.meta.url), "utf8");
+const src = readFileSync(new URL("../src/samples/demo.orbs", import.meta.url), "utf8");
 const ast = parse(lex(src).output!).output!.ast;
 const sem = analyze(ast);
 assert.ok(sem.ok, "demo passes semantics");

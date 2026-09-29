@@ -1,0 +1,14 @@
+# loop.orbs — loops are back-edges in the control-flow graph
+let n = 5;
+let fact = 1;
+while (n > 1) {
+  fact = fact * n;
+  n = n - 1;
+}
+print fact;             # 120
+
+let sum = 0;
+for (let i = 1; i <= 10; i = i + 1) {
+  if (i % 2 == 0) { sum = sum + i; }
+}
+print sum;              # 30: the even numbers up to 10

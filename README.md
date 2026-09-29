@@ -1,13 +1,13 @@
 <p align="center">
-  <img src="public/sneklogo.png" alt="Ouroboros logo" width="120" />
+  <img src="public/orblogo.png" alt="Ouroboros logo" width="120" />
 </p>
 
 <h1 align="center">Ouroboros</h1>
 
 <p align="center"><b>Watching a compiler think, one automaton at a time.</b><br/>
-An interactive, step-by-step visualizer of a complete compiler — from raw characters to a running virtual machine — for the toy language <b>Snek</b>.</p>
+An interactive, step-by-step visualizer of a complete compiler — from raw characters to a running virtual machine — for the toy language <b>Ouroboros</b>.</p>
 
-<p align="center">Theory of Computation course project · Preact + TypeScript + Vite · runs entirely in the browser</p>
+<p align="center">A Theory of Computation project (started as a course project) · Preact + TypeScript + Vite · runs entirely in the browser</p>
 
 ---
 
@@ -15,7 +15,7 @@ An interactive, step-by-step visualizer of a complete compiler — from raw char
 
 1. [About the app](#1-about-the-app)
 2. [Theory of Computation behind it](#2-theory-of-computation-behind-it)
-3. [The Snek language](#3-the-snek-language)
+3. [The Ouroboros language](#3-the-ouroboros-language)
 4. [Phases of a compiler](#4-phases-of-a-compiler)
 5. [Implementation, phase by phase](#5-implementation-phase-by-phase)
 6. [Developer guide](#6-developer-guide)
@@ -24,9 +24,9 @@ An interactive, step-by-step visualizer of a complete compiler — from raw char
 
 ## 1. About the app
 
-**Ouroboros** takes a program written in **Snek** (a small language made for this project) and pushes it through all seven phases of a real compiler pipeline — the same phases CPython goes through — while recording *every single step* each phase takes. You then play those steps back like a video.
+**Ouroboros** takes a program written in the **Ouroboros language** (a small language made for this project, `.orbs` files) and pushes it through all seven phases of a real compiler pipeline — the same phases CPython goes through — while recording *every single step* each phase takes. You then play those steps back like a video.
 
-**Naming:** *Ouroboros* is the app. *Snek* is the language it compiles (`.snek` files). The ouroboros — a snake eating its own tail — is the loop of a compiler: source text in, a machine that runs source text out.
+**Naming:** *Ouroboros* is both the app and the language it compiles (`.orbs` files). The ouroboros — a snake eating its own tail — is the loop of a compiler: source text in, a machine that runs source text out.
 
 ### What you see
 
@@ -39,7 +39,7 @@ An interactive, step-by-step visualizer of a complete compiler — from raw char
 | **2×2 explanation grid** | Every step explains itself in four cells: **What** happened · **Why** (the rule or theorem forcing it) · **Formal** (the δ entry, production, typing rule, translation rule…) · **Next**. |
 | **Intro cards** | One per phase: what it does, its input and output, and which ToC machine it is. |
 | **Glossary hovers** | Hover a ToC term (DFA, PDA, FIRST set, fixpoint…) for a short definition. |
-| **Samples** | A dropdown with `demo.snek` and one program per error kind (lexical, syntax, semantic, runtime, non-halting). You can also upload your own `.snek` file or edit the code in place (Save / Ctrl+Enter recompiles). |
+| **Samples** | A dropdown with `demo.orbs` and one program per error kind (lexical, syntax, semantic, runtime, non-halting). You can also upload your own `.orbs` file or edit the code in place (Save / Ctrl+Enter recompiles). |
 
 > 📸 **Screenshot — home screen (phase flowchart):** `docs/screenshots/home.png`
 <!-- ![Home screen](docs/screenshots/home.png) -->
@@ -81,16 +81,20 @@ The seven phases climb the **Chomsky hierarchy**. Each phase uses the weakest ma
 - **Rice's theorem.** Any non-trivial question about what a program *does* is undecidable. Type checking and dead-code elimination therefore check decidable *approximations*: types the literals make knowable (`unknown` otherwise); code with *no path* in the graph.
 - **Fixpoints.** FIRST/FOLLOW, the optimizer's rewrite loop, and jump sizing in the assembler all repeat until nothing changes — and each provably terminates because something only grows or only shrinks.
 - **Universal machine.** The VM takes the program as *data* and simulates it, as a universal Turing machine reads another machine's description.
-- **Two stacks = Turing power.** One stack is a PDA; the VM has two (operand stack + call-frame stack) plus unbounded integers, so Snek is **Turing-complete** — and therefore halting is undecidable. `err-halt.snek` shows the step cap (10 000 instructions) tripping with that explanation.
+- **Two stacks = Turing power.** One stack is a PDA; the VM has two (operand stack + call-frame stack) plus unbounded integers, so Ouroboros is **Turing-complete** — and therefore halting is undecidable. `err-halt.orbs` shows the step cap (10 000 instructions) tripping with that explanation.
 
 ---
 
-## 3. The Snek language
+## 3. The Ouroboros language
 
-Integers (unbounded, `BigInt`), booleans, strings, arrays, functions, `let`, `if/else`, `while`, `for`, `print`, `return`, `&& || !`, and `#` / `/* */` comments.
+- **Values:** unbounded `int`, `float`, `bool`, `string`, `none`.
+- **Collections** (snake-named): **coil** `[1, 2]` (list), **scale** `@(1, "a")` (immutable tuple), **den** `@{ "k": 1 }` (map), **clutch** `@[1, 2]` (set), with methods (`xs.push(3)`, `d.keys()`) and `for x in xs`.
+- **Control flow:** `let`, `if/else`, `while`, C-style `for`, `for x in …`, `fn` / `return`, `print`, `&& || !`, `%`, built-ins `len` `str` `int` `float`.
+- **Classes:** fields, methods, `self`, `new`, inheritance (`class Snake : Animal`), `super`, dynamic dispatch, `priv`, `abstract`, overloading by arity.
+- `#` and `/* */` comments. Files use the `.orbs` extension.
 
-```snek
-# demo.snek
+```orbs
+# demo.orbs
 fn square(n) {
   return n * n;
 }
@@ -110,37 +114,34 @@ if (false) { print "never"; }   # removed as dead code
 
 Output: `hi`
 
-Grammar (EBNF shorthand — the app shows the pure-BNF version it actually parses with; full spec in [`docs/snek-grammar.md`](docs/snek-grammar.md)):
-
-```
-Program        -> Decl* EOF
-Decl           -> FuncDecl | Statement
-FuncDecl       -> "fn" IDENT "(" Params? ")" Block
-Statement      -> LetStmt | PrintStmt | IfStmt | WhileStmt | ForStmt
-                | ReturnStmt | Block | ExprStmt
-Expr           -> LogicOr
-LogicOr        -> LogicAnd ( "||" LogicAnd )*
-LogicAnd       -> Equality ( "&&" Equality )*
-Equality       -> Comparison ( ("==" | "!=") Comparison )*
-Comparison     -> Additive ( ("<" | ">" | "<=" | ">=") Additive )*
-Additive       -> Multiplicative ( ("+" | "-") Multiplicative )*
-Multiplicative -> Unary ( ("*" | "/") Unary )*
-Unary          -> "-" Unary | "!" Unary | Postfix
-Postfix        -> Primary ( "(" Args? ")" | "[" Expr "]" )*
-Primary        -> NUMBER | STRING | IDENT | "true" | "false"
-                | "(" Expr ")" | "[" Args? "]"
-```
+The full grammar (EBNF and the pure BNF the parser actually runs on), the
+type rules, built-ins, collections and class rules are in
+[`docs/ouroboros-grammar.md`](docs/ouroboros-grammar.md).
 
 ### Sample programs (`src/samples/`)
 
-| File | Fails in | Why |
+| File | Shows | Result |
 |---|---|---|
-| `demo.snek` | — | Runs all 7 phases, prints `hi`. |
-| `err-lex.snek` | Phase 1 | `123abc` — a number running into letters. |
-| `err-parse.snek` | Phase 2 | `let = 5;` — the LL(1) table has no entry for `let` followed by `=`. |
-| `err-semantic.snek` | Phase 3 | `x + true` — no typing rule for `int + bool`. |
-| `err-runtime.snek` | Phase 7 | `1 / 0` — division by zero (the optimizer deliberately never folds it). |
-| `err-halt.snek` | Phase 7 | `while (true)` — step cap reached; halting problem. |
+| `demo.orbs` | functions, `for`, arrays, `&&`, dead code | prints `hi` |
+| `arith.orbs` | precedence, left-associativity, `%`, unary minus, folding | all folded in Phase 5 |
+| `floats.orbs` | int → float widening, `int()` / `float()` / `str()` | `0.1 + 0.2 == 0.3` is `false` |
+| `scopes.orbs` | reassigning vs shadowing, `none` | inner `x` never touches the outer one |
+| `loop.orbs` · `recursion.orbs` · `logic.orbs` | loops (CFG back-edges), the frame stack, short-circuit | |
+| `coils.orbs` · `scales.orbs` · `dens.orbs` · `clutch.orbs` | the four collections, the heap, aliasing | |
+| `classes.orbs` · `zoo.orbs` | fields, methods, inheritance, `super`, dynamic dispatch | |
+| `bank.orbs` · `shapes.orbs` · `overload.orbs` | `priv`, `abstract`, overloading by arity | |
+| `err-lex.orbs` | `123abc` | Phase 1 |
+| `err-parse.orbs` | `let = 5;` | Phase 2 |
+| `err-semantic.orbs` · `err-redeclare.orbs` · `err-scale-write.orbs` · `err-cycle.orbs` · `err-no-field.orbs` · `err-self.orbs` · `err-private.orbs` · `err-abstract-new.orbs` · `err-missing-impl.orbs` · `err-overload.orbs` | type error, `let` twice, writing a scale, inheritance cycle, unknown field, `self` outside a class, private access, `new` on an abstract class, missing override, duplicate overload | Phase 3 |
+| `err-runtime.orbs` · `err-bad-key.orbs` · `err-recursion.orbs` · `err-halt.orbs` | `1 / 0`, missing den key, 256-frame cap, 10 000-step cap (halting problem) | Phase 7 |
+
+---|---|---|
+| `demo.orbs` | — | Runs all 7 phases, prints `hi`. |
+| `err-lex.orbs` | Phase 1 | `123abc` — a number running into letters. |
+| `err-parse.orbs` | Phase 2 | `let = 5;` — the LL(1) table has no entry for `let` followed by `=`. |
+| `err-semantic.orbs` | Phase 3 | `x + true` — no typing rule for `int + bool`. |
+| `err-runtime.orbs` | Phase 7 | `1 / 0` — division by zero (the optimizer deliberately never folds it). |
+| `err-halt.orbs` | Phase 7 | `while (true)` — step cap reached; halting problem. |
 
 ---
 
@@ -164,7 +165,7 @@ source text ─► 1 Lexing ─► tokens ─► 2 Parsing ─► AST ─► 3 S
 | 6 | **Bytecode emission** | IR → bytes + tables | How is it packed into numbers a machine reads? |
 | 7 | **Execution (VM)** | bytes → output | What does it actually do? |
 
-Ouroboros mirrors **CPython**: CPython also tokenizes, parses to an AST, compiles to stack bytecode via a control-flow graph with peephole optimizations, emits 2-byte "wordcode", and runs it on a stack VM (`dis` shows it). Snek is small enough that every state, rule and instruction fits on one screen.
+Ouroboros mirrors **CPython**: CPython also tokenizes, parses to an AST, compiles to stack bytecode via a control-flow graph with peephole optimizations, emits 2-byte "wordcode", and runs it on a stack VM (`dis` shows it). Ouroboros is small enough that every state, rule and instruction fits on one screen.
 
 ---
 
@@ -193,8 +194,8 @@ Every phase is a pure function in `src/compiler/` returning `{ ok, trace, chapte
 
 ### Phase 3 — Semantic analysis
 
-- **Engine:** `semantic.ts` makes two passes: first it hoists every function name and arity (so functions can be called before they're defined), then walks the AST depth-first with a **stack of scopes** (the symbol table), resolving every name to a slot and typing every expression. Types: `int`, `bool`, `string`, `array<T>`, and `unknown` (for function parameters — Snek has no annotations, so the VM checks those at run time).
-- **Catches:** undeclared or duplicate names, type mismatches, non-bool conditions, wrong argument counts, assigning to non-lvalues, `return` outside a function.
+- **Engine:** `semantic.ts` makes two passes: first it hoists every function name and arity (so functions can be called before they're defined), then walks the AST depth-first with a **stack of scopes** (the symbol table), resolving every name to a slot and typing every expression. Types: `int`, `float`, `bool`, `string`, `none`, `coil<T>`, `scale<…>`, `den<K, V>`, `clutch<T>`, class types, and `unknown` (for function parameters — Ouroboros has no annotations, so the VM checks those at run time). Classes are hoisted too; the inheritance graph must be acyclic.
+- **Catches:** undeclared or duplicate names, type mismatches, non-bool conditions, wrong argument counts, assigning to non-lvalues, `return` outside a function, unhashable keys, writing to a scale, unknown fields/methods, inheritance cycles, private access, `new` on an abstract class, missing overrides.
 - **View:** the AST with type badges filling in, and the scope stack pushing and popping.
 
 > 📸 **Screenshot — Phase 3 (typed AST, scope stack):** `docs/screenshots/phase3-semantic.png`
@@ -219,7 +220,7 @@ Every phase is a pure function in `src/compiler/` returning `{ ok, trace, chapte
 
 ### Phase 6 — Bytecode emission
 
-- **Engine:** `bytecode.ts` assembles each code object into **2-byte wordcode** (opcode byte + argument byte), like CPython 3.12. Labels become **relative** jump offsets in instruction units; arguments above 255 get `EXTENDED_ARG` prefixes. Because a prefix makes a jump longer, which can push other jumps further, sizes are recomputed until nothing grows (a fixpoint). It also builds `co_consts`, `co_names`, `co_varnames` and a line table. Opcode numbers are Snek's own table (e.g. `POP_JUMP_IF_FALSE` = `0x2C`).
+- **Engine:** `bytecode.ts` assembles each code object into **2-byte wordcode** (opcode byte + argument byte), like CPython 3.12. Labels become **relative** jump offsets in instruction units; arguments above 255 get `EXTENDED_ARG` prefixes. Because a prefix makes a jump longer, which can push other jumps further, sizes are recomputed until nothing grows (a fixpoint). It also builds `co_consts`, `co_names`, `co_varnames` and a line table. Opcode numbers are Ouroboros's own table (e.g. `POP_JUMP_IF_FALSE` = `0x2C`).
 - **View:** the three tables filling in, the jump-sizing passes, labels → offsets, and each instruction's encoding (`IR ⟶ opcode, arg ⟶ bytes`). The right panel is a `dis`-style listing (line, offset, opname, arg, resolved value) with the hex bytes under every row.
 
 > 📸 **Screenshot — Phase 6 (tables, encoding, dis listing):** `docs/screenshots/phase6-bytecode.png`
@@ -227,9 +228,9 @@ Every phase is a pure function in `src/compiler/` returning `{ ok, trace, chapte
 
 ### Phase 7 — Execution (virtual machine)
 
-- **Engine:** `vm.ts` is a fetch–decode–execute loop over the raw bytes: read the opcode at the program counter, fold in any `EXTENDED_ARG`s, pop operands, push results, follow jumps, push/pop call frames. Values: unbounded integers, booleans, strings, arrays, functions, and *no value*.
-- **Run-time errors:** division by zero, index out of range, type errors on `unknown` operands, using a function's missing return value, **step cap** (10 000 instructions — the halting problem) and **frame cap** (256 — unbounded recursion).
-- **View:** the executed instruction, operand stack, call-frame stack, the top frame's locals, and the console. The right panel is the `dis` listing with the program counter highlighted. Chapters follow source lines.
+- **Engine:** `vm.ts` is a fetch–decode–execute loop over the raw bytes: read the opcode at the program counter, fold in any `EXTENDED_ARG`s, pop operands, push results, follow jumps, push/pop call frames. Values: unbounded integers, floats, booleans, strings, `none`, and references to heap objects (coils, scales, dens, clutches, objects). Method calls on objects use **dynamic dispatch** — the VM walks the class chain, and the step says which class supplied the method.
+- **Run-time errors:** division by zero, index out of range, missing den key, type errors on `unknown` operands, computing with `none`, private access through an `unknown` value, **step cap** (10 000 instructions — the halting problem) and **frame cap** (256 — unbounded recursion).
+- **View:** the executed instruction, operand stack, call-frame stack, the top frame's locals, the **heap** (objects the instruction touched are outlined) and the console. The right panel is the `dis` listing with the program counter highlighted. Chapters follow source lines.
 
 > 📸 **Screenshot — Phase 7 (VM stacks, console, PC):** `docs/screenshots/phase7-vm.png`
 <!-- ![Phase 7](docs/screenshots/phase7-vm.png) -->
@@ -273,7 +274,14 @@ node scripts/check-semantic.ts
 node scripts/check-ir.ts
 node scripts/check-opt.ts         # runs the program before and after optimizing; output must match
 node scripts/check-bytecode.ts
-node scripts/check-vm.ts          # demo prints "hi"; error samples fail in the right phase
+node scripts/check-vm.ts          # every sample runs or fails in the right phase
+```
+
+Run any program from the command line:
+
+```bash
+node scripts/run.ts src/samples/zoo.orbs
+node scripts/run.ts -e 'print 1 + 2;'
 ```
 
 ### Project layout
@@ -289,27 +297,30 @@ src/
     irgen.ts irTypes.ts                              phase 4
     optimize.ts                                      phase 5
     bytecode.ts                                      phase 6
-    vm.ts                                            phase 7
+    vm.ts heap.ts                                    phase 7 (heap.ts: run-time collections and objects)
+    values.ts          value semantics shared by the optimizer and the VM (arithmetic, ==, built-ins)
     messages/          all explanation text (one file per phase + intro + glossary)
   components/          UI — one folder per phase (lex/ parse/ semantic/ ir/ opt/ bytecode/ vm/)
     graph/ElkGraph.tsx graph layout (elkjs in a Web Worker)
     PhaseFlowchart, Scrubber, ExplanationGrid, IntroCard, CodePanel, Navbar …
-  samples/             demo.snek + one sample per error kind
-  styles/              colour and font tokens
-scripts/               the per-phase self-checks
+  samples/             demo.orbs, feature demos, and one sample per error kind
+  hooks/useMedia.ts    phone breakpoint (the layout itself is CSS in styles/layout.css)
+  styles/              colour and font tokens, responsive layout
+scripts/               the per-phase self-checks, and run.ts
 docs/                  plan, grammar, rules, presentation kit
 ```
 
 ### Extending the language
 
-Add a construct by walking the pipeline in order: `dfa.ts` / `tokens.ts` → `grammar.ts` (run `check-parse` — it catches LL(1) conflicts) → `ast.ts` + `astBuilder.ts` → `semantic.ts` → `irgen.ts` (+ opcode in `irTypes.ts`) → `bytecode.ts` `OPCODE_NUM` → `vm.ts` → the matching `messages/*.ts` → `docs/snek-grammar.md`. Then run all seven checks.
+Add a construct by walking the pipeline in order: `dfa.ts` / `tokens.ts` → `grammar.ts` (run `check-parse` — it catches LL(1) conflicts) → `ast.ts` + `astBuilder.ts` → `semantic.ts` → `irgen.ts` (+ opcode in `irTypes.ts`) → `bytecode.ts` `OPCODE_NUM` → `vm.ts` → the matching `messages/*.ts` → `docs/ouroboros-grammar.md`. Then run all seven checks.
 
 ### Docs
 
 | File | What |
 |---|---|
+| [`docs/features.md`](docs/features.md) | Every feature of the language, compiler, app and tooling in one list |
 | [`docs/phase34plan.md`](docs/phase34plan.md) | Master design: every decision and why |
-| [`docs/snek-grammar.md`](docs/snek-grammar.md) | Full Snek grammar (EBNF + pure BNF) |
+| [`docs/ouroboros-grammar.md`](docs/ouroboros-grammar.md) | Full Ouroboros grammar (EBNF + pure BNF) |
 | [`docs/compiler-phases.md`](docs/compiler-phases.md) | Real compiler pipelines mapped to ToC |
 | [`docs/ppt.md`](docs/ppt.md) | Presentation kit |
 | [`docs/rules.md`](docs/rules.md) | Contributor rules |

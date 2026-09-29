@@ -58,7 +58,7 @@ function exec(p: IrProgram): string[] {
   return out;
 }
 
-const ir = irOf("demo.snek");
+const ir = irOf("demo.orbs");
 const r = optimize(ir);
 assert.ok(r.ok && r.output);
 const opt = r.output.program;
@@ -80,7 +80,7 @@ for (const a of ["leaders", "blocks", "edges", "fold", "branch-fold", "dce", "pe
 for (const s of r.trace) for (const k of ["what", "why", "formal", "next"] as const) assert.ok(s.explain[k]);
 
 // Division by zero must survive optimization (it is a run-time error).
-const rt = optimize(irOf("err-runtime.snek"));
+const rt = optimize(irOf("err-runtime.orbs"));
 assert.ok(text(rt.output!.program.main).some((t) => t.includes("(/)")), "1 / 0 not folded");
 assert.ok(rt.trace.some((s) => s.explain.what.startsWith("Did not fold")));
 assert.throws(() => exec(rt.output!.program), /division by zero/);

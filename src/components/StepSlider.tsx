@@ -51,7 +51,7 @@ export function StepSlider({ total, current, chapters, onSeek }: StepSliderProps
 
   return (
     <div
-      style={{ position: "relative", width: "100%", height: STEP_SLIDER_HEIGHT, paddingTop: TOP_PAD, flexShrink: 0 }}
+      style={{ position: "relative", width: "100%", height: STEP_SLIDER_HEIGHT, paddingTop: TOP_PAD, flexShrink: 0, touchAction: "none" }}
       onPointerMove={(e: any) => { handleMove(e); handleDrag(e); }}
       onPointerLeave={() => { setHoverX(null); setHoverChapter(null); }}
     >

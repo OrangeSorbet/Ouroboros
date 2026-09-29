@@ -23,8 +23,9 @@ function Card({ title, children }: { title: string; children: ComponentChildren 
 }
 
 // Phase 7 view: the machine state after the current instruction — operand
-// stack (top first), call-frame stack, the top frame's locals, and the
-// console. The right panel shows the same instruction in the dis listing.
+// stack (top first), call-frame stack, the top frame's locals, the heap
+// (objects the instruction touched are outlined), and the console. The
+// right panel shows the same instruction in the dis listing.
 export function VmView({ result, index }: VmViewProps) {
   const step = result.trace[index];
   const top = step.frames[step.frames.length - 1];
@@ -41,7 +42,7 @@ export function VmView({ result, index }: VmViewProps) {
       </div>
       {step.error && <div style={{ color: colors.error, fontSize: 13 }}>{step.error}</div>}
 
-      <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gridTemplateRows: "minmax(0, 1fr) minmax(0, 1fr)", gap: 12 }}>
+      <div className="rsp-grid3" style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gridTemplateRows: "minmax(0, 1fr) minmax(0, 1fr)", gap: 12 }}>
         <Card title={`Operand stack (${step.stack.length}) — top first`}>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {step.stack.length === 0 && <span style={{ color: colors.textSecondary }}>(empty)</span>}
@@ -68,7 +69,18 @@ export function VmView({ result, index }: VmViewProps) {
             </div>
           ))}
         </Card>
-        <div style={{ gridColumn: "1 / span 3", ...card }}>
+        <Card title={`Heap (${step.heap.length}) — stack & locals hold #refs`}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {step.heap.length === 0 && <span style={{ color: colors.textSecondary }}>(empty)</span>}
+            {step.heap.map((h) => (
+              <div key={h.id} title={h.value} style={{ ...cell, borderColor: step.touched.includes(h.id) ? colors.nodeActive : colors.border }}>
+                <span style={{ color: colors.codeLineNumber }}>#{h.id} </span>
+                <span style={{ color: colors.typeBadge }}>{h.kind}</span> {h.value}
+              </div>
+            ))}
+          </div>
+        </Card>
+        <div style={{ gridColumn: "2 / span 2", ...card }}>
           <div style={label}>Console</div>
           <div style={{ ...mono, background: colors.codeBg, borderRadius: 6, padding: "6px 10px" }}>
             {step.output.map((line, i) => <div key={i} style={{ whiteSpace: "pre-wrap" }}>{line}</div>)}

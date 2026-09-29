@@ -13,7 +13,7 @@ import { TabBar } from "../lex/TabBar";
 
 type Mode = "tree" | "ast";
 const MODES = (Object.keys(PARSE_UI.treeToggle) as Mode[]).map((id) => ({ id, label: PARSE_UI.treeToggle[id] }));
-const VALUE_KINDS = new Set(["IDENT", "NUMBER", "STRING"]);
+const VALUE_KINDS = new Set(["IDENT", "NUMBER", "FLOAT", "STRING"]);
 
 // The parse tree as it stood at trace index `index`: nodes appear when the
 // expand that created them runs (createdAt) and turn "done" once expanded or

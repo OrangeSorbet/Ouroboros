@@ -1,6 +1,6 @@
-# Compiler Phases — Reference for Ouroboros (the Snek compiler)
+# Compiler Phases — Reference for the Ouroboros compiler
 
-Background doc for the course project + PPT. Explains real compiler pipelines, maps them to Theory of Computation (ToC) concepts, and states what Snek implements vs. gestures at.
+Background doc for the course project + PPT. Explains real compiler pipelines, maps them to Theory of Computation (ToC) concepts, and states what Ouroboros implements vs. gestures at.
 
 ## 1. CPython's real pipeline (5 stages)
 
@@ -16,7 +16,7 @@ So: `source -> tokens -> AST -> instructions -> CFG (optimized) -> bytecode`.
 
 ## 2. Mapping to ToC concepts
 
-| Real CPython stage | ToC concept | Weight for Snek |
+| Real CPython stage | ToC concept | Weight for Ouroboros |
 |---|---|---|
 | Tokenizer | DFA/NFA — regex to NFA to DFA, scanning chars into tokens | **High** — fully implement |
 | Parser (PEG -> AST) | CFG (Context-Free Grammar) + PDA — derivation tree construction | **High** — fully implement |
@@ -52,7 +52,7 @@ Key difference: C compiles ahead-of-time (AOT) all the way to native machine cod
 - Separate linking step (C: yes; Python/Java: no — resolved at import/class-load)
 - Optimization aggressiveness (C ahead-of-time, Java JIT at runtime)
 
-## 4. Snek's scope decision
+## 4. Ouroboros's scope decision
 
 Stick with the **Python/bytecode model**: stop at bytecode (then run it on a VM), no linking, no native codegen. Keeps scope sane, still hits every required ToC concept.
 
@@ -67,6 +67,6 @@ Stick with the **Python/bytecode model**: stop at bytecode (then run it on a VM)
 See `docs/ppt.md` (slides, speaker notes, likely viva questions) and `docs/phase34plan.md` §2 (the Chomsky-hierarchy map). Short version:
 
 - Lexer = DFA: alphabet, states, transition function, accepting states -> demoable via `src/compiler/dfa.ts` and the DFA graph view.
-- Parser = context-free grammar + PDA: grammar in `docs/snek-grammar.md`, PDA expand/match trace from `src/compiler/parser.ts`.
-- Decidability angle: constant folding / peephole optimization is decidable; general program optimization (e.g., "is this dead code reachable") is undecidable — Rice's theorem callback for why Snek's optimizer is sound but incomplete.
+- Parser = context-free grammar + PDA: grammar in `docs/ouroboros-grammar.md`, PDA expand/match trace from `src/compiler/parser.ts`.
+- Decidability angle: constant folding / peephole optimization is decidable; general program optimization (e.g., "is this dead code reachable") is undecidable — Rice's theorem callback for why Ouroboros's optimizer is sound but incomplete.
 - Every stage after parsing is real in CPython/Java/C but progressively less automata-theoretic, ending in a Turing-complete VM whose halting is undecidable.

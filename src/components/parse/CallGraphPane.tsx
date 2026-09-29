@@ -33,11 +33,11 @@ export function CallGraphPane({ step }: { step: PdaStep }) {
   }));
 
   return (
-    <div style={{ position: "absolute", inset: 0, display: "flex" }}>
+    <div className="rsp-row" style={{ position: "absolute", inset: 0, display: "flex" }}>
       <div style={{ flex: 1, position: "relative", minWidth: 0 }}>
         <ElkGraph nodes={nodes} edges={edges} direction="DOWN" />
       </div>
-      <div style={{ width: 300, flexShrink: 0, display: "flex", flexDirection: "column", borderLeft: `1px solid ${colors.border}`, background: colors.panelBackground }}>
+      <div className="rsp-side" style={{ width: 300, flexShrink: 0, display: "flex", flexDirection: "column", borderLeft: `1px solid ${colors.border}`, background: colors.panelBackground }}>
         <div style={{ padding: "6px 10px", fontFamily: fonts.base, fontSize: 10.5, color: colors.textSecondary, borderBottom: `1px solid ${colors.border}` }}>
           {PARSE_UI.callNote}
         </div>

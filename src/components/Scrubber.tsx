@@ -5,6 +5,7 @@ import { fonts } from "../styles/fonts";
 import { StepSlider, STEP_SLIDER_HEIGHT } from "./StepSlider";
 import { ExplanationGrid, EXPLANATION_GRID_HEIGHT } from "./ExplanationGrid";
 import type { Chapter, Explanation } from "../compiler/trace";
+import { PHONE, useMedia } from "../hooks/useMedia";
 
 interface ScrubberProps {
   index: number;
@@ -21,11 +22,14 @@ interface ScrubberProps {
 }
 
 const CONTROLS_HEIGHT = 26;
+const CONTROLS_HEIGHT_PHONE = 36; // bigger touch targets
 const ROW_GAP = 6;
 // Exact rendered height of <Scrubber> (content box, excluding whatever
 // padding the caller wraps it in) — fixed so the view box above can be
 // sized once instead of measured.
-export const SCRUBBER_HEIGHT = CONTROLS_HEIGHT + ROW_GAP + EXPLANATION_GRID_HEIGHT + ROW_GAP + STEP_SLIDER_HEIGHT;
+export const scrubberHeight = (phone: boolean) =>
+  (phone ? CONTROLS_HEIGHT_PHONE : CONTROLS_HEIGHT) + ROW_GAP + EXPLANATION_GRID_HEIGHT + ROW_GAP + STEP_SLIDER_HEIGHT;
+export const SCRUBBER_HEIGHT = scrubberHeight(false);
 
 const iconButtonStyle = {
   background: "transparent",
@@ -84,7 +88,7 @@ function MiniSlider({ value, onChange, width = 90 }: { value: number; onChange: 
       ref={trackRef}
       onPointerDown={(e: any) => { e.currentTarget.setPointerCapture?.(e.pointerId); setFromClientX(e.clientX); }}
       onPointerMove={(e: any) => { if (e.buttons === 1) setFromClientX(e.clientX); }}
-      style={{ position: "relative", width, height: 16, display: "flex", alignItems: "center", cursor: "pointer", flexShrink: 0 }}
+      style={{ position: "relative", width, height: 16, display: "flex", alignItems: "center", cursor: "pointer", flexShrink: 0, touchAction: "none" }}
     >
       <div style={{ position: "absolute", left: 0, right: 0, height: 4, borderRadius: 2, background: colors.sliderTrack }} />
       <div
@@ -168,40 +172,42 @@ export function Scrubber({
   meta,
 }: ScrubberProps) {
   const hasSteps = total > 0;
+  const phone = useMedia(PHONE);
+  const btn = phone ? { ...iconButtonStyle, width: CONTROLS_HEIGHT_PHONE, height: CONTROLS_HEIGHT_PHONE } : iconButtonStyle;
 
   return (
-    <div style={{ height: SCRUBBER_HEIGHT, display: "flex", flexDirection: "column", gap: ROW_GAP }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, height: CONTROLS_HEIGHT, flexShrink: 0 }}>
-        <button onClick={() => hasSteps && onTogglePlay()} disabled={!hasSteps} style={iconButtonStyle}>
+    <div style={{ height: scrubberHeight(phone), display: "flex", flexDirection: "column", gap: ROW_GAP }}>
+      <div style={{ display: "flex", alignItems: "center", gap: phone ? 6 : 10, height: phone ? CONTROLS_HEIGHT_PHONE : CONTROLS_HEIGHT, flexShrink: 0 }}>
+        <button onClick={() => hasSteps && onTogglePlay()} disabled={!hasSteps} style={btn}>
           <Icon name={playing ? "pause" : "play"} />
         </button>
         <button
           onClick={() => hasSteps && onSeek(Math.max(0, index - 1))}
           disabled={!hasSteps || index <= 0}
-          style={{ ...iconButtonStyle, opacity: !hasSteps || index <= 0 ? 0.4 : 1 }}
+          style={{ ...btn, opacity: !hasSteps || index <= 0 ? 0.4 : 1 }}
         >
           <Icon name="prev" />
         </button>
-        <span style={{ fontFamily: fonts.mono, fontSize: 12, color: colors.textSecondary, minWidth: 90, textAlign: "center" }}>
+        <span style={{ fontFamily: fonts.mono, fontSize: 12, color: colors.textSecondary, minWidth: phone ? 70 : 90, textAlign: "center" }}>
           Step {hasSteps ? index + 1 : 0} / {total}
         </span>
         <button
           onClick={() => hasSteps && onSeek(Math.min(total - 1, index + 1))}
           disabled={!hasSteps || index >= total - 1}
-          style={{ ...iconButtonStyle, opacity: !hasSteps || index >= total - 1 ? 0.4 : 1 }}
+          style={{ ...btn, opacity: !hasSteps || index >= total - 1 ? 0.4 : 1 }}
         >
           <Icon name="next" />
         </button>
         <SpeedControl speed={speed} onChange={onSpeedChange} />
         {meta && (
-          <span style={{ marginLeft: "auto", fontFamily: fonts.mono, fontSize: 12, color: colors.accent }}>
+          <span style={{ marginLeft: "auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: fonts.mono, fontSize: 12, color: colors.accent }}>
             {meta}
           </span>
         )}
       </div>
 
       {explain ? (
-        <ExplanationGrid explain={explain} />
+        <ExplanationGrid explain={explain} tabs={phone} />
       ) : (
         <div style={{ height: EXPLANATION_GRID_HEIGHT, display: "flex", alignItems: "center", color: colors.textSecondary, fontSize: 13 }}>
           {description}

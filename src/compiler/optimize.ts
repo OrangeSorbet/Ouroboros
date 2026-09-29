@@ -10,12 +10,13 @@ import { JUMP_OPS, formatConst, formatInstr } from "./irTypes.ts";
 import type { CodeObject, IrConst, IrInstr, IrProgram, Opcode } from "./irTypes.ts";
 import type { Chapter, Explanation, PhaseResult, TraceStep } from "./trace.ts";
 import { optMessages } from "./messages/opt.ts";
+import { arith, compare, isNum } from "./values.ts";
 
 export type OptAction =
   | "leaders" | "blocks" | "edges"
   | "propagate" | "fold" | "branch-fold" | "dce" | "peephole" | "fixpoint";
 
-export type EdgeKind = "fall" | "jump" | "true" | "false";
+export type EdgeKind = "fall" | "jump" | "true" | "false" | "next" | "done";
 
 export interface CfgBlock {
   id: number;
@@ -87,7 +88,7 @@ function cloneCode(c: CodeObject): CodeObject {
 }
 
 function cloneProgram(p: IrProgram): IrProgram {
-  return { main: cloneCode(p.main), functions: p.functions.map(cloneCode) };
+  return { main: cloneCode(p.main), functions: p.functions.map(cloneCode), classes: p.classes };
 }
 
 export function buildCfg(code: CodeObject): Cfg {
@@ -118,6 +119,7 @@ export function buildCfg(code: CodeObject): Cfg {
       case "POP_JUMP_IF_FALSE":
       case "JUMP_IF_FALSE_OR_POP": add(tgt, "false"); add(next, "true"); break;
       case "JUMP_IF_TRUE_OR_POP": add(tgt, "true"); add(next, "false"); break;
+      case "FOR_ITER": add(tgt, "done"); add(next, "next"); break;
       default: add(next, "fall");
     }
   }
@@ -128,28 +130,15 @@ export function buildCfg(code: CodeObject): Cfg {
 
 type Folded = { value: IrConst } | "div0" | null;
 
+// A type error is left for the VM to report at run time (null); a zero
+// divisor is refused explicitly ("div0") so the error stays in the program.
 function evalBinary(op: Opcode, sym: string, a: IrConst, b: IrConst): Folded {
-  if (op === "COMPARE_OP") {
-    if (sym === "==" || sym === "!=") {
-      // == is only well-typed on same-typed scalars; anything else is left
-      // for the VM to reject at run time.
-      if (typeof a !== typeof b || a === null || b === null) return null;
-      return { value: (a === b) === (sym === "==") };
-    }
-    if (typeof a !== "bigint" || typeof b !== "bigint") return null;
-    return { value: sym === "<" ? a < b : sym === ">" ? a > b : sym === "<=" ? a <= b : a >= b };
-  }
-  if (sym === "+" && typeof a === "string" && typeof b === "string") return { value: a + b };
-  if (typeof a !== "bigint" || typeof b !== "bigint") return null;
-  switch (sym) {
-    case "+": return { value: a + b };
-    case "-": return { value: a - b };
-    case "*": return { value: a * b };
-    default: return b === 0n ? "div0" : { value: a / b }; // BigInt `/` truncates toward zero
-  }
+  const r = op === "COMPARE_OP" ? compare(sym, a, b) : arith(sym, a, b);
+  if ("error" in r) return r.error === "division" ? "div0" : null;
+  return { value: r.value };
 }
 
-const BIN_SYMS = ["+", "-", "*", "/"];
+const BIN_SYMS = ["+", "-", "*", "/", "%"];
 const CMP_SYMS = ["==", "!=", "<", ">", "<=", ">="];
 
 class Optimizer {
@@ -215,9 +204,9 @@ class Optimizer {
       if (!a) continue;
       const u = ins[i + 1];
       if (u && cfg.blockOf[i + 1] === cfg.blockOf[i] && (u.op === "UNARY_NEGATIVE" || u.op === "UNARY_NOT")) {
-        const ok = u.op === "UNARY_NEGATIVE" ? typeof a.v === "bigint" : typeof a.v === "boolean";
+        const ok = u.op === "UNARY_NEGATIVE" ? isNum(a.v) : typeof a.v === "boolean";
         if (ok) {
-          const r: IrConst = u.op === "UNARY_NEGATIVE" ? -(a.v as bigint) : !a.v;
+          const r: IrConst = u.op === "UNARY_NEGATIVE" ? -(a.v as bigint | number) : !a.v;
           const expr = `${u.op === "UNARY_NEGATIVE" ? "-" : "!"}${formatConst(a.v)}`;
           return this.foldRewrite(code, i, [i + 1], r, expr, false);
         }
@@ -236,7 +225,7 @@ class Optimizer {
         refused.add(key);
         return { action: "fold", remove: [], replace: new Map(), explain: optMessages.foldRefused(expr), summary: `refuse to fold ${expr}`, at: i };
       }
-      if (res) return this.foldRewrite(code, i, [i + 1, i + 2], res.value, expr, sym === "/");
+      if (res) return this.foldRewrite(code, i, [i + 1, i + 2], res.value, expr, (sym === "/" || sym === "%") && typeof res.value === "bigint");
     }
     return null;
   }

@@ -1,0 +1,11 @@
+# scopes.orbs — reassigning vs shadowing
+let x = 10;
+x = x + 5;              # reassign: same variable, same slot
+{
+  let x = 1;            # shadow: a new x in the inner scope
+  print x;              # 1
+}
+print x;                # 15: the outer x was never touched
+let y = none;           # no value yet
+y = x * 2;
+print y;                # 30

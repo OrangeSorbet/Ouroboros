@@ -1,0 +1,7 @@
+# scales.orbs — a scale is a fixed, immutable tuple
+let point = @(3, 4);
+print point[0] * point[0] + point[1] * point[1];   # 25
+let pet = @("kaa", 7, true);
+print pet[0] + " is " + str(pet[1]);               # kaa is 7
+print @(1, 2) == @(1, 2);   # true: scales compare by value
+print [1, 2] == [1, 2];     # false: coils compare by identity

@@ -2,6 +2,8 @@ import { PHASES } from "./PhaseMinimap";
 import type { PhaseId } from "../compiler/trace";
 import { colors } from "../styles/colors";
 import { fonts } from "../styles/fonts";
+import { useEffect, useRef, useState } from "preact/hooks";
+import { PHONE, useMedia } from "../hooks/useMedia";
 
 export { PHASES };
 
@@ -16,24 +18,29 @@ interface PhaseFlowchartProps {
 
 // Snake layout: phases 1–4 left→right on the top row, 5–7 right→left on
 // the bottom row, so seven boxes fit a ~1000 px pane without shrinking text.
-const BOX_W = 180;
-const BOX_H = 112;
-const GAP_X = 44;
-const GAP_Y = 52;
-const COLS = 4;
-const WIDTH = COLS * BOX_W + (COLS - 1) * GAP_X;
-const HEIGHT = 2 * BOX_H + GAP_Y;
+// Phones get a single column instead. Either way the whole chart is scaled
+// down (never up) to fit the pane.
+interface Geometry { boxW: number; boxH: number; gapX: number; gapY: number; cols: number; width: number; height: number }
+const geometry = (boxW: number, boxH: number, gapX: number, gapY: number, cols: number): Geometry => {
+  const rows = Math.ceil(PHASES.length / cols);
+  return { boxW, boxH, gapX, gapY, cols, width: cols * boxW + (cols - 1) * gapX, height: rows * boxH + (rows - 1) * gapY };
+};
+const SNAKE = geometry(180, 112, 44, 52, 4);
+const COLUMN = geometry(240, 92, 0, 22, 1);
+// Space the navbar covers at the top of the pane (desktop / phone).
+const NAV_CLEAR = { desktop: 92, phone: 50 };
 
-function cell(i: number): { x: number; y: number } {
-  const row = i < COLS ? 0 : 1;
-  const col = row === 0 ? i : 2 * COLS - 1 - i;
-  return { x: col * (BOX_W + GAP_X), y: row * (BOX_H + GAP_Y) };
+function cell(i: number, g: Geometry): { x: number; y: number } {
+  const row = Math.floor(i / g.cols);
+  const col = row % 2 === 0 ? i % g.cols : g.cols - 1 - (i % g.cols);
+  return { x: col * (g.boxW + g.gapX), y: row * (g.boxH + g.gapY) };
 }
 
 // Connector from phase i to phase i+1: right on the top row, down at the
 // turn, left on the bottom row.
-function Connector({ i, done }: { i: number; done: boolean }) {
-  const a = cell(i), b = cell(i + 1);
+function Connector({ i, done, g }: { i: number; done: boolean; g: Geometry }) {
+  const BOX_W = g.boxW, BOX_H = g.boxH, GAP_X = g.gapX, GAP_Y = g.gapY;
+  const a = cell(i, g), b = cell(i + 1, g);
   const color = done ? colors.accent : colors.edge;
   const down = a.x === b.x;
   const left = b.x < a.x;
@@ -69,20 +76,38 @@ function Connector({ i, done }: { i: number; done: boolean }) {
 // enabled box "zooms into" that phase (wired by the caller via onSelectPhase).
 export function PhaseFlowchart({ activePhase, completedPhases, enabledPhases, errorPhase, errorMessage, onSelectPhase }: PhaseFlowchartProps) {
   const errorAt = errorPhase ? PHASES.findIndex((p) => p.id === errorPhase) : -1;
+  const phone = useMedia(PHONE);
+  const g = phone ? COLUMN : SNAKE;
+  const top = phone ? NAV_CLEAR.phone : NAV_CLEAR.desktop;
+
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => {
+      const pad = 16;
+      setScale(Math.min(1, (e.contentRect.width - 2 * pad) / g.width, (e.contentRect.height - 2 * pad) / g.height));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [g]);
+
   return (
     <div
+      ref={boxRef}
       style={{
         position: "absolute",
-        inset: 0,
+        inset: `${top}px 0 0 0`,
         background: colors.background,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
       }}
     >
-      <div style={{ position: "relative", width: WIDTH, height: HEIGHT, flexShrink: 0 }}>
+      <div style={{ position: "relative", width: g.width, height: g.height, flexShrink: 0, transform: `scale(${scale})` }}>
         {PHASES.slice(0, -1).map((p, i) => (
-          <Connector key={p.id} i={i} done={completedPhases.includes(p.id)} />
+          <Connector key={p.id} i={i} g={g} done={completedPhases.includes(p.id)} />
         ))}
 
         {PHASES.map((phase, i) => {
@@ -91,7 +116,7 @@ export function PhaseFlowchart({ activePhase, completedPhases, enabledPhases, er
           const isError = i === errorAt;
           const isBlocked = errorAt >= 0 && i > errorAt;
           const clickable = enabledPhases.includes(phase.id) && !isBlocked;
-          const { x, y } = cell(i);
+          const { x, y } = cell(i, g);
           const border = isError ? colors.error : isDone ? colors.accent : isActive ? colors.nodeActive : colors.nodeIdleBorder;
           return (
             <button
@@ -106,8 +131,8 @@ export function PhaseFlowchart({ activePhase, completedPhases, enabledPhases, er
                 position: "absolute",
                 left: x,
                 top: y,
-                width: BOX_W,
-                height: BOX_H,
+                width: g.boxW,
+                height: g.boxH,
                 borderRadius: 14,
                 background: isError ? colors.diffRemoved : isActive ? colors.nodeActive : isDone ? colors.diffAdded : colors.nodeIdle,
                 border: `2px solid ${border}`,

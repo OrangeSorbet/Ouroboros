@@ -1,0 +1,4 @@
+# err-bad-key.orbs — a missing den key is only found at run time
+let ages = @{ "rex": 3 };
+let who = "kaa";
+print ages[who];

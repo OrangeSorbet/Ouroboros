@@ -6,6 +6,7 @@ import { fonts } from "../../styles/fonts";
 // Short cell names so all 18 classes fit across; full name on hover.
 const SHORT: Record<State, string> = {
   START: "S", IN_WHITESPACE: "WS", IN_LINE_COMMENT: "LCOM", IN_IDENT: "ID", IN_NUMBER: "NUM",
+  NUM_DOT: "N.", IN_FLOAT: "FLT",
   BAD_NUMBER: "BAD", SINGLE: "SGL", SAW_EQ: "=", SAW_EQ_EQ: "==", SAW_LT: "<", SAW_LT_EQ: "<=",
   SAW_GT: ">", SAW_GT_EQ: ">=", SAW_BANG: "!", SAW_BANG_EQ: "!=", SAW_AMP: "&", SAW_AMP_AMP: "&&",
   SAW_PIPE: "|", SAW_PIPE_PIPE: "||", SAW_SLASH: "/", IN_BLOCK_COMMENT: "BCOM", BLOCK_STAR: "B*",

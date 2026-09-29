@@ -1,0 +1,5 @@
+# err-abstract-new.orbs — an abstract class cannot be instantiated
+abstract class Shape {
+  abstract fn area();
+}
+let s = new Shape();

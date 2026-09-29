@@ -46,11 +46,12 @@ export function SemanticView({ result, index, ast }: SemanticViewProps) {
   }, [ast, itemOf, typeFinal, result, index, step]);
 
   return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", background: colors.background }}>
+    <div className="rsp-row" style={{ position: "absolute", inset: 0, display: "flex", background: colors.background }}>
       <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
         <ElkGraph nodes={graph.nodes} edges={graph.edges} direction="DOWN" emptyText="no AST node for this step" />
       </div>
       <div
+        className="rsp-side"
         style={{
           width: 240,
           flexShrink: 0,

@@ -1,0 +1,5 @@
+# err-recursion.orbs — no base case: the frame stack hits its cap (256)
+fn down(n) {
+  return down(n + 1);
+}
+print down(0);

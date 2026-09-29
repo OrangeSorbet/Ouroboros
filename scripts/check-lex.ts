@@ -6,7 +6,7 @@ import { lex } from "../src/compiler/lexer.ts";
 const sample = (name: string) => readFileSync(new URL(`../src/samples/${name}`, import.meta.url), "utf8");
 const kinds = (src: string) => lex(src).output!.map((t) => t.kind);
 
-const demo = lex(sample("demo.snek"));
+const demo = lex(sample("demo.orbs"));
 assert.ok(demo.ok, demo.error?.message);
 const toks = demo.output!;
 const line = (l: number) => toks.filter((t) => t.line === l).map((t) => t.kind);
@@ -14,7 +14,7 @@ assert.deepEqual(line(2), ["FN", "IDENT", "LPAREN", "IDENT", "RPAREN", "LBRACE"]
 assert.deepEqual(line(11), ["IF", "LPAREN", "IDENT", "GT", "NUMBER", "AND", "NOT", "FALSE", "RPAREN", "LBRACE"]);
 assert.equal(toks.at(-1)!.kind, "EOF");
 
-const bad = lex(sample("err-lex.snek"));
+const bad = lex(sample("err-lex.orbs"));
 assert.equal(bad.ok, false);
 assert.match(bad.error!.message, /invalid decimal literal/);
 assert.equal(bad.trace.at(-1)!.kind, "error");
@@ -22,10 +22,19 @@ assert.equal(bad.trace.at(-1)!.kind, "error");
 assert.match(lex("/* x").error!.message, /unterminated comment/);
 assert.equal(lex("a & b").ok, false);
 assert.match(lex("\"abc").error!.message, /unterminated string/);
-assert.match(lex("@").error!.message, /unexpected character/);
+assert.match(lex("$").error!.message, /unexpected character/);
 assert.deepEqual(kinds("!x"), ["NOT", "IDENT", "EOF"]);
 assert.deepEqual(kinds("x<=y"), ["IDENT", "LTE", "IDENT", "EOF"]);
 assert.deepEqual(kinds("a/b /* c */ # d\n||&&!= ,[]"), ["IDENT", "SLASH", "IDENT", "OR", "AND", "NEQ", "COMMA", "LBRACKET", "RBRACKET", "EOF"]);
+
+// M1: floats, %, none. "3.x" backs up to NUMBER, leaving '.' on its own.
+assert.deepEqual(kinds("1.5 % 2 none"), ["FLOAT", "PERCENT", "NUMBER", "NONE", "EOF"]);
+assert.match(lex("1.2.3").error!.message, /invalid decimal literal/);
+assert.match(lex("2.5x").error!.message, /invalid decimal literal/);
+assert.deepEqual(kinds("3.x"), ["NUMBER", "DOT", "IDENT", "EOF"]);
+// M2: member access, den / scale / clutch literals, for-each.
+assert.deepEqual(kinds("xs.push(1)"), ["IDENT", "DOT", "IDENT", "LPAREN", "NUMBER", "RPAREN", "EOF"]);
+assert.deepEqual(kinds("@{a: 1} @(1) @[2] for x in"), ["AT", "LBRACE", "IDENT", "COLON", "NUMBER", "RBRACE", "AT", "LPAREN", "NUMBER", "RPAREN", "AT", "LBRACKET", "NUMBER", "RBRACKET", "FOR", "IDENT", "IN", "EOF"]);
 
 const str = lex(String.raw`"a\n\"b\\"`).output![0];
 assert.equal(str.kind, "STRING");

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
 import { Navbar } from "./components/Navbar";
-import { Scrubber, speedToIntervalMs, SCRUBBER_HEIGHT } from "./components/Scrubber";
+import { Scrubber, speedToIntervalMs, scrubberHeight } from "./components/Scrubber";
 import { CodePanel } from "./components/CodePanel";
 import { PhaseFlowchart } from "./components/PhaseFlowchart";
 import { IntroCard, IntroButton } from "./components/IntroCard";
@@ -19,14 +19,18 @@ import { compile, IMPLEMENTED_PHASES } from "./compiler/pipeline";
 import type { PipelineResult } from "./compiler/pipeline";
 import type { PhaseId, PhaseResult, TraceStep } from "./compiler/trace";
 import { colors } from "./styles/colors";
+import { PHONE, useMedia } from "./hooks/useMedia";
 import "./styles/layout.css";
 import "./app.css";
 
 type ViewId = "flowchart" | PhaseId;
 
-// Navbar (top 16, ~60 tall) + a 34px row for the back / intro buttons.
-const VIEW_TOP = 118;
-const SCRUBBER_PAD = 24;
+// Navbar (top 16, ~60 tall) + a 34px row for the back / intro buttons;
+// the phone navbar is compact (top 8, ~42 tall).
+const CHROME = { desktop: { backTop: 84, viewTop: 118, pad: 24, padX: 24 }, phone: { backTop: 58, viewTop: 92, pad: 12, padX: 10 } };
+
+// Label of the side panel's collapse bar when the layout is stacked.
+const DOCK_LABEL: Partial<Record<ViewId, string>> = { ir: "IR listing", opt: "Optimized IR", bytecode: "Bytecode", vm: "Bytecode · PC" };
 
 const EMPTY_INDICES: Record<PhaseId, number> = { lex: 0, parse: 0, semantic: 0, ir: 0, opt: 0, bytecode: 0, vm: 0 };
 
@@ -51,6 +55,9 @@ export function App() {
   const [view, setView] = useState<ViewId>("flowchart");
   const [introOpen, setIntroOpen] = useState(false);
   const [autoReturn, setAutoReturn] = useState(false);
+  const phone = useMedia(PHONE);
+  const chrome = phone ? CHROME.phone : CHROME.desktop;
+  const [dockOpen, setDockOpen] = useState(() => !window.matchMedia(PHONE).matches);
   const [zoom, setZoom] = useState<{ from: ViewId; to: ViewId; origin: { x: number; y: number }; direction: "in" | "out" } | null>(null);
 
   const beginZoom = (from: ViewId, to: ViewId, origin: { x: number; y: number }) => {
@@ -134,7 +141,7 @@ export function App() {
     const i = v === "flowchart" ? 0 : indices[v];
 
     return (
-      <div style={{ height: "100vh", width: "100%", position: "relative", overflow: "hidden", background: colors.background }}>
+      <div style={{ height: "100%", width: "100%", position: "relative", overflow: "hidden", background: colors.background }}>
         {v === "flowchart" ? (
           <PhaseFlowchart
             activePhase={flowchartActive}
@@ -145,7 +152,7 @@ export function App() {
             onSelectPhase={(id, origin) => beginZoom(view, id, origin)}
           />
         ) : (
-          <div style={{ position: "absolute", top: VIEW_TOP, left: 0, right: 0, bottom: SCRUBBER_HEIGHT + SCRUBBER_PAD }}>
+          <div style={{ position: "absolute", top: chrome.viewTop, left: 0, right: 0, bottom: scrubberHeight(phone) + chrome.pad }}>
             {r && r.trace.length > 0 && renderPhaseView(v, i)}
             <IntroCard phase={v} open={introOpen && v === view} onClose={() => setIntroOpen(false)} />
           </div>
@@ -154,7 +161,7 @@ export function App() {
         <Navbar filename={filename} tokenCount={pipeline?.lex.output?.length ?? 0} onLoad={handleLoad} />
 
         {v !== "flowchart" && (
-          <div style={{ position: "absolute", top: 84, left: 16, zIndex: 30, display: "flex", gap: 8 }}>
+          <div style={{ position: "absolute", top: chrome.backTop, left: phone ? 8 : 16, zIndex: 30, display: "flex", gap: 8 }}>
             <button
               onClick={(e: any) => {
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -185,7 +192,7 @@ export function App() {
               left: 0,
               right: 0,
               zIndex: 30,
-              padding: `${SCRUBBER_PAD / 2}px 24px`,
+              padding: `${chrome.pad / 2}px ${chrome.padX}px`,
               background: colors.glass,
               borderTop: `1px solid ${colors.glassBorder}`,
               backdropFilter: "blur(14px)",
@@ -217,8 +224,8 @@ export function App() {
   );
 
   return (
-    <div style={{ width: "100%", height: "100vh", background: colors.background, display: "flex", overflow: "hidden" }}>
-      <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+    <div className="app-root" style={{ width: "100%", background: colors.background, display: "flex", overflow: "hidden" }}>
+      <div style={{ flex: 1, minWidth: 0, minHeight: 0, position: "relative", overflow: "hidden" }}>
         {!zoom && renderLeftPane(view)}
         {zoom && (
           <ZoomTransition
@@ -231,6 +238,12 @@ export function App() {
         )}
       </div>
 
+      <div className={`side-dock${dockOpen ? "" : " collapsed"}`}>
+      <button className="dock-bar" onClick={() => setDockOpen((o) => !o)} aria-expanded={dockOpen}>
+        <span>{DOCK_LABEL[view] ?? filename ?? "source.orbs"}</span>
+        <span>{dockOpen ? "▾" : "▴"}</span>
+      </button>
+      <div className="dock-body">
       {view === "ir" && pipeline?.ir && source ? (
         <IrConversionPanel result={pipeline.ir} index={indices.ir} source={source} />
       ) : view === "opt" && pipeline?.opt ? (
@@ -249,6 +262,8 @@ export function App() {
         onChange={recompile}
       />
       )}
+      </div>
+      </div>
     </div>
   );
 }

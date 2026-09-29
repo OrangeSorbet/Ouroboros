@@ -6,10 +6,11 @@
 // IrProgram — no automaton, just a computable translation.
 import type { Chapter, PhaseResult, TraceStep } from "./trace.ts";
 import type { CodeObject, IrInstr, IrProgram, Opcode } from "./irTypes.ts";
-import { BINARY_OPS, COMPARE_OPS, JUMP_OPS, formatConst, formatInstr } from "./irTypes.ts";
+import { BINARY_OPS, COMPARE_OPS, JUMP_OPS, formatConst, formatInstr, type IrConst } from "./irTypes.ts";
 import { asmMessages } from "./messages/bytecode.ts";
+import type { ClassInfo } from "./semanticTypes.ts";
 
-// Snek's own opcode numbering (deliberately not CPython's numbers). Like
+// Ouroboros's own opcode numbering (deliberately not CPython's numbers). Like
 // CPython's HAVE_ARGUMENT split, opcodes below 0x20 ignore their arg byte
 // (it is always 0); 0x20 and up use it. POP_JUMP_IF_FALSE = 0x2C, so a jump
 // three units ahead encodes as the bytes `2C 03`.
@@ -21,6 +22,7 @@ export const OPCODE_NUM = {
   RETURN_VALUE: 0x05,
   PRINT: 0x06,
   POP_TOP: 0x07,
+  GET_ITER: 0x08,
   LOAD_CONST: 0x20,
   LOAD_FAST: 0x21,
   STORE_FAST: 0x22,
@@ -34,6 +36,14 @@ export const OPCODE_NUM = {
   JUMP_IF_FALSE_OR_POP: 0x2a,
   JUMP_IF_TRUE_OR_POP: 0x2b,
   POP_JUMP_IF_FALSE: 0x2c,
+  CALL_BUILTIN: 0x2d,
+  BUILD_SCALE: 0x2e,
+  BUILD_DEN: 0x2f,
+  BUILD_CLUTCH: 0x30,
+  LOAD_METHOD: 0x31,
+  FOR_ITER: 0x32,
+  LOAD_ATTR: 0x33,
+  STORE_ATTR: 0x34,
   EXTENDED_ARG: 0x7f,
 } as const satisfies Record<Opcode | "EXTENDED_ARG", number>;
 export type OpName = keyof typeof OPCODE_NUM;
@@ -57,7 +67,7 @@ export interface BytecodeObject {
   params: string[];
   nslots: number;
   slotNames: string[];                         // co_varnames
-  consts: (bigint | boolean | string | null)[]; // co_consts
+  consts: IrConst[]; // co_consts
   names: string[];                             // co_names
   code: number[];                              // co_code (bytes)
   lineTable: { offset: number; line: number }[]; // start byte offset of each run of one source line
@@ -67,6 +77,7 @@ export interface BytecodeObject {
 export interface BytecodeProgram {
   main: BytecodeObject;
   functions: BytecodeObject[];
+  classes?: ClassInfo[]; // M3, passed through from the IR
 }
 
 export type AsmAction = "begin-code" | "const-table" | "resolve-label" | "encode" | "fixpoint" | "done" | "error";
@@ -115,7 +126,10 @@ function argreprFor(ins: IrInstr, co: CodeObject, arg: number, targetOffset?: nu
     case "LOAD_CONST": return formatConst(co.consts[arg] ?? null);
     case "LOAD_FAST":
     case "STORE_FAST": return co.slotNames[arg] ?? "?";
-    case "LOAD_GLOBAL": return co.names[arg] ?? "?";
+    case "LOAD_GLOBAL":
+    case "LOAD_METHOD":
+    case "LOAD_ATTR":
+    case "STORE_ATTR": return co.names[arg] ?? "?";
     case "BINARY_OP": return BINARY_OPS[arg] ?? "?";
     case "COMPARE_OP": return COMPARE_OPS[arg] ?? "?";
     default: return "";
@@ -274,7 +288,7 @@ class Assembler {
 export function assemble(ir: IrProgram): PhaseResult<AsmStep, BytecodeProgram> {
   const asm = new Assembler();
   // Functions first, then <main>: matches source order for programs that
-  // declare functions before top-level code, like demo.snek.
+  // declare functions before top-level code, like demo.orbs.
   const functions: BytecodeObject[] = [];
   for (const fn of ir.functions) {
     const obj = asm.assembleCode(fn);
@@ -283,5 +297,5 @@ export function assemble(ir: IrProgram): PhaseResult<AsmStep, BytecodeProgram> {
   }
   const main = asm.assembleCode(ir.main);
   if (!main) return { ok: false, trace: asm.trace, chapters: asm.chapters, error: { message: asm.error! } };
-  return { ok: true, trace: asm.trace, chapters: asm.chapters, output: { main, functions } };
+  return { ok: true, trace: asm.trace, chapters: asm.chapters, output: { main, functions, classes: ir.classes } };
 }

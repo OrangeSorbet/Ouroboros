@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1790503036491,
+  "lastScanned": 1790691586305,
   "projectRoot": "C:\\Users\\ashvi\\Documents\\VS_Codes\\HTML\\Snek",
   "techStack": {
     "languages": [
@@ -70,7 +70,7 @@
       "path": "dist",
       "purpose": "Distribution/build output",
       "fileCount": 4,
-      "lastAccessed": 1790503036434,
+      "lastAccessed": 1790691586219,
       "keyFiles": [
         "favicon.svg",
         "icons.svg",
@@ -81,28 +81,21 @@
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
-      "fileCount": 8,
-      "lastAccessed": 1790503036435,
+      "fileCount": 10,
+      "lastAccessed": 1790691586220,
       "keyFiles": [
         "agent-brief.md",
         "checklist.md",
         "compiler-phases.md",
-        "phase34plan.md",
-        "ppt.md"
+        "Ouroboros_TOC_Endsem copy.pptx",
+        "Ouroboros_TOC_Endsem.pptx"
       ]
-    },
-    "parked": {
-      "path": "parked",
-      "purpose": null,
-      "fileCount": 0,
-      "lastAccessed": 1790503036444,
-      "keyFiles": []
     },
     "public": {
       "path": "public",
       "purpose": "Public files",
       "fileCount": 3,
-      "lastAccessed": 1790503036444,
+      "lastAccessed": 1790691586221,
       "keyFiles": [
         "favicon.svg",
         "icons.svg",
@@ -112,21 +105,21 @@
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
-      "fileCount": 5,
-      "lastAccessed": 1790503036445,
+      "fileCount": 7,
+      "lastAccessed": 1790691586222,
       "keyFiles": [
+        "check-bytecode.ts",
         "check-ir.ts",
         "check-lex.ts",
         "check-opt.ts",
-        "check-parse.ts",
-        "check-semantic.ts"
+        "check-parse.ts"
       ]
     },
     "src": {
       "path": "src",
       "purpose": "Source code",
       "fileCount": 4,
-      "lastAccessed": 1790503036445,
+      "lastAccessed": 1790691586223,
       "keyFiles": [
         "app.css",
         "app.tsx",
@@ -138,7 +131,7 @@
       "path": "tooldata",
       "purpose": null,
       "fileCount": 5,
-      "lastAccessed": 1790503036446,
+      "lastAccessed": 1790691586224,
       "keyFiles": [
         "checklist.json",
         "ignore.json",
@@ -151,35 +144,18 @@
       "path": "dist\\assets",
       "purpose": "Static assets",
       "fileCount": 3,
-      "lastAccessed": 1790503036447,
+      "lastAccessed": 1790691586226,
       "keyFiles": [
         "elk-worker.min-r_yRvuMO.js",
-        "index-D41HzGah.js",
+        "index-D1OU9Ai6.js",
         "index-Do3VNAD5.css"
-      ]
-    },
-    "parked\\components": {
-      "path": "parked\\components",
-      "purpose": "UI components",
-      "fileCount": 0,
-      "lastAccessed": 1790503036448,
-      "keyFiles": []
-    },
-    "parked\\scripts": {
-      "path": "parked\\scripts",
-      "purpose": "Build/utility scripts",
-      "fileCount": 2,
-      "lastAccessed": 1790503036449,
-      "keyFiles": [
-        "check-bytecode.ts",
-        "check-vm.ts"
       ]
     },
     "src\\assets": {
       "path": "src\\assets",
       "purpose": "Static assets",
       "fileCount": 3,
-      "lastAccessed": 1790503036451,
+      "lastAccessed": 1790691586228,
       "keyFiles": [
         "hero.png",
         "preact.svg",
@@ -190,7 +166,7 @@
       "path": "src\\components",
       "purpose": "UI components",
       "fileCount": 11,
-      "lastAccessed": 1790503036452,
+      "lastAccessed": 1790691586229,
       "keyFiles": [
         "CodePanel.tsx",
         "ExplanationGrid.tsx",
@@ -200,303 +176,63 @@
   },
   "hotPaths": [
     {
-      "path": "src/app.tsx",
-      "accessCount": 74,
-      "lastAccessed": 1790504377391,
+      "path": "src/compiler/semantic.ts",
+      "accessCount": 2,
+      "lastAccessed": 1790694027231,
       "type": "file"
     },
     {
-      "path": "src/components/DfaGraph.tsx",
-      "accessCount": 48,
-      "lastAccessed": 1790497377412,
+      "path": "docs/roadmap.md",
+      "accessCount": 1,
+      "lastAccessed": 1790692167416,
+      "type": "file"
+    },
+    {
+      "path": "src/hooks/useMedia.ts",
+      "accessCount": 1,
+      "lastAccessed": 1790692326724,
+      "type": "file"
+    },
+    {
+      "path": "src/app.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1790692368048,
+      "type": "file"
+    },
+    {
+      "path": "src/compiler/values.ts",
+      "accessCount": 1,
+      "lastAccessed": 1790692829153,
       "type": "file"
     },
     {
       "path": "src/components/CodePanel.tsx",
-      "accessCount": 41,
-      "lastAccessed": 1790497410345,
-      "type": "file"
-    },
-    {
-      "path": "src/compiler/parser.ts",
-      "accessCount": 31,
-      "lastAccessed": 1790497623310,
-      "type": "file"
-    },
-    {
-      "path": "src/compiler/steps.ts",
-      "accessCount": 15,
-      "lastAccessed": 1790490073101,
-      "type": "file"
-    },
-    {
-      "path": "src/compiler/messages.ts",
-      "accessCount": 14,
-      "lastAccessed": 1790490063501,
-      "type": "file"
-    },
-    {
-      "path": "src/compiler/lexer.ts",
-      "accessCount": 11,
-      "lastAccessed": 1790497632257,
-      "type": "file"
-    },
-    {
-      "path": "src/app.css",
-      "accessCount": 9,
-      "lastAccessed": 1790422398368,
-      "type": "file"
-    },
-    {
-      "path": "src/components/PhaseFlowchart.tsx",
-      "accessCount": 9,
-      "lastAccessed": 1790497719479,
-      "type": "file"
-    },
-    {
-      "path": "src/components/TransitionTable.tsx",
-      "accessCount": 8,
-      "lastAccessed": 1790485608709,
-      "type": "file"
-    },
-    {
-      "path": "docs/checklist.md",
-      "accessCount": 8,
-      "lastAccessed": 1790496815040,
-      "type": "file"
-    },
-    {
-      "path": "src/compiler/dfa.ts",
-      "accessCount": 8,
-      "lastAccessed": 1790497511667,
-      "type": "file"
-    },
-    {
-      "path": "src/components/ZoomTransition.tsx",
-      "accessCount": 6,
-      "lastAccessed": 1790432888839,
-      "type": "file"
-    },
-    {
-      "path": "src/components/PdaStackView.tsx",
-      "accessCount": 6,
-      "lastAccessed": 1790485824689,
-      "type": "file"
-    },
-    {
-      "path": "src/components/PdaGraph.tsx",
-      "accessCount": 6,
-      "lastAccessed": 1790488792431,
-      "type": "file"
-    },
-    {
-      "path": "docs/rules.md",
-      "accessCount": 6,
-      "lastAccessed": 1790496812425,
-      "type": "file"
-    },
-    {
-      "path": "src",
-      "accessCount": 5,
-      "lastAccessed": 1790485710037,
-      "type": "directory"
-    },
-    {
-      "path": "src/components/Navbar.tsx",
-      "accessCount": 5,
-      "lastAccessed": 1790504756120,
-      "type": "file"
-    },
-    {
-      "path": "src/components/Scrubber.tsx",
-      "accessCount": 4,
-      "lastAccessed": 1790416712462,
-      "type": "file"
-    },
-    {
-      "path": "docs/snek-grammar.md",
-      "accessCount": 4,
-      "lastAccessed": 1790490552578,
-      "type": "file"
-    },
-    {
-      "path": "src/styles/colors.ts",
-      "accessCount": 4,
-      "lastAccessed": 1790497176582,
-      "type": "file"
-    },
-    {
-      "path": "CLAUDE.md",
-      "accessCount": 4,
-      "lastAccessed": 1790504424599,
-      "type": "file"
-    },
-    {
-      "path": "tooldata/checklist.json",
-      "accessCount": 3,
-      "lastAccessed": 1790413107191,
-      "type": "file"
-    },
-    {
-      "path": "src/components/StepSlider.tsx",
-      "accessCount": 3,
-      "lastAccessed": 1790414987718,
-      "type": "file"
-    },
-    {
-      "path": "src/compiler/pda.ts",
-      "accessCount": 3,
-      "lastAccessed": 1790487594964,
-      "type": "file"
-    },
-    {
-      "path": "src/components/ParserTokenPanel.tsx",
-      "accessCount": 3,
-      "lastAccessed": 1790487966561,
-      "type": "file"
-    },
-    {
-      "path": "docs/phase34plan.md",
-      "accessCount": 3,
-      "lastAccessed": 1790496814207,
-      "type": "file"
-    },
-    {
-      "path": "src/compiler/tokens.ts",
-      "accessCount": 3,
-      "lastAccessed": 1790497106354,
-      "type": "file"
-    },
-    {
-      "path": "src/compiler/ast.ts",
-      "accessCount": 3,
-      "lastAccessed": 1790497107234,
-      "type": "file"
-    },
-    {
-      "path": "docs/compiler-phases.md",
-      "accessCount": 3,
-      "lastAccessed": 1790497347197,
-      "type": "file"
-    },
-    {
-      "path": "src/components/StepDetailsPanel.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1790413890361,
-      "type": "file"
-    },
-    {
-      "path": "src/components/PdaTransitionTable.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1790487605891,
-      "type": "file"
-    },
-    {
-      "path": "src/components/PhaseMinimap.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1790497690175,
-      "type": "file"
-    },
-    {
-      "path": "package.json",
       "accessCount": 1,
-      "lastAccessed": 1790412348461,
+      "lastAccessed": 1790693161121,
       "type": "file"
     },
     {
-      "path": "src/main.tsx",
+      "path": "scripts/check-vm.ts",
       "accessCount": 1,
-      "lastAccessed": 1790412348835,
+      "lastAccessed": 1790693220721,
       "type": "file"
     },
     {
-      "path": "vite.config.ts",
+      "path": "src/compiler/heap.ts",
       "accessCount": 1,
-      "lastAccessed": 1790412349274,
+      "lastAccessed": 1790693594105,
       "type": "file"
     },
     {
-      "path": "src/steps.ts",
+      "path": "src/components/vm/VmView.tsx",
       "accessCount": 1,
-      "lastAccessed": 1790412355679,
+      "lastAccessed": 1790693718866,
       "type": "file"
     },
     {
-      "path": "src/ast.ts",
+      "path": "docs/features.md",
       "accessCount": 1,
-      "lastAccessed": 1790412356150,
-      "type": "file"
-    },
-    {
-      "path": "src/tokens.ts",
-      "accessCount": 1,
-      "lastAccessed": 1790412356637,
-      "type": "file"
-    },
-    {
-      "path": "src/lexer.ts",
-      "accessCount": 1,
-      "lastAccessed": 1790412357057,
-      "type": "file"
-    },
-    {
-      "path": "src/parser.ts",
-      "accessCount": 1,
-      "lastAccessed": 1790412357561,
-      "type": "file"
-    },
-    {
-      "path": "src/dfa.ts",
-      "accessCount": 1,
-      "lastAccessed": 1790412358022,
-      "type": "file"
-    },
-    {
-      "path": "tooldata/rules.md",
-      "accessCount": 1,
-      "lastAccessed": 1790412588291,
-      "type": "file"
-    },
-    {
-      "path": "src/test-parser.ts",
-      "accessCount": 1,
-      "lastAccessed": 1790412847881,
-      "type": "file"
-    },
-    {
-      "path": "src/components",
-      "accessCount": 1,
-      "lastAccessed": 1790412853203,
-      "type": "directory"
-    },
-    {
-      "path": "scripts/test-parser.ts",
-      "accessCount": 1,
-      "lastAccessed": 1790412873137,
-      "type": "file"
-    },
-    {
-      "path": "tsconfig.app.json",
-      "accessCount": 1,
-      "lastAccessed": 1790412986313,
-      "type": "file"
-    },
-    {
-      "path": "tsconfig.json",
-      "accessCount": 1,
-      "lastAccessed": 1790412986738,
-      "type": "file"
-    },
-    {
-      "path": "src/styles/fonts.ts",
-      "accessCount": 1,
-      "lastAccessed": 1790413490595,
-      "type": "file"
-    },
-    {
-      "path": "src/components/TokenStream.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1790419524860,
+      "lastAccessed": 1790695283435,
       "type": "file"
     }
   ],

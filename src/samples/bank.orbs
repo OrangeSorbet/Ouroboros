@@ -1,0 +1,21 @@
+# bank.orbs — encapsulation: priv state changes only through methods
+class Account {
+  priv let balance = 0;
+  priv fn log(what) { print what + " -> " + str(self.balance); }
+  fn deposit(n) {
+    self.balance = self.balance + n;
+    self.log("deposit");
+  }
+  fn withdraw(n) {
+    if (n > self.balance) { print "refused"; return false; }
+    self.balance = self.balance - n;
+    self.log("withdraw");
+    return true;
+  }
+  fn get() { return self.balance; }
+}
+let acct = new Account();
+acct.deposit(50);
+acct.withdraw(80);          # refused: the class guards its own rules
+acct.withdraw(20);
+print acct.get();           # 30

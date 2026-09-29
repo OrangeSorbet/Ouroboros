@@ -1,4 +1,4 @@
-// AST for the extended Snek language (docs/phase34plan.md §7.3). Built by
+// AST for the extended Ouroboros language (docs/phase34plan.md §7.3). Built by
 // the parser from the parse tree: punctuation dropped, one-child chains
 // collapsed, operator tails folded left-associatively.
 //
@@ -17,13 +17,40 @@ export interface Program extends NodeBase {
   items: Decl[]; // source order
 }
 
-export type Decl = FuncDecl | Stmt;
+export type Decl = FuncDecl | ClassDecl | Stmt;
 
 export interface FuncDecl extends NodeBase {
   kind: "FuncDecl";
   name: string;
+  priv?: boolean; // methods only (M4)
   params: Param[];
   body: Block;
+}
+
+// class Name : Parent { let f = e; fn m(…) { … } } (M3). Methods are
+// FuncDecls whose code objects are named "Class.method" and take an
+// implicit `self` in slot 0.
+export interface ClassDecl extends NodeBase {
+  kind: "ClassDecl";
+  name: string;
+  abstract: boolean;          // M4: cannot be instantiated
+  parent: string | null;
+  fields: FieldDecl[];
+  methods: FuncDecl[];
+  abstractMethods: AbstractMethod[]; // M4: signatures a concrete subclass must implement
+}
+
+export interface FieldDecl extends NodeBase {
+  kind: "FieldDecl";
+  name: string;
+  priv: boolean;     // M4: visible only inside this class's methods
+  init: Expr | null; // null: starts as none
+}
+
+export interface AbstractMethod extends NodeBase {
+  kind: "AbstractMethod";
+  name: string;
+  params: Param[];
 }
 
 export interface Param extends NodeBase {
@@ -38,6 +65,7 @@ export type Stmt =
   | IfStmt
   | WhileStmt
   | ForStmt
+  | ForEachStmt
   | ReturnStmt
   | Block
   | ExprStmt;
@@ -85,6 +113,15 @@ export interface ForStmt extends NodeBase {
   body: Block;
 }
 
+// for x in e { … } (M2): x is a fresh variable in the loop's own scope,
+// its slot recorded under this node's id. Desugared to GET_ITER/FOR_ITER.
+export interface ForEachStmt extends NodeBase {
+  kind: "ForEachStmt";
+  name: string;
+  iterable: Expr;
+  body: Block;
+}
+
 export interface ReturnStmt extends NodeBase {
   kind: "ReturnStmt";
   value: Expr | null;
@@ -106,13 +143,22 @@ export type Expr =
   | UnaryExpr
   | CallExpr
   | IndexExpr
+  | MemberExpr
+  | SelfExpr
+  | SuperExpr
+  | NewExpr
   | NumberLiteral
+  | FloatLiteral
+  | NoneLiteral
   | StringLiteral
   | BoolLiteral
   | ArrayLiteral
+  | ScaleLiteral
+  | DenLiteral
+  | ClutchLiteral
   | Identifier;
 
-export type BinaryOperator = "+" | "-" | "*" | "/" | "==" | "!=" | "<" | ">" | "<=" | ">=";
+export type BinaryOperator = "+" | "-" | "*" | "/" | "%" | "==" | "!=" | "<" | ">" | "<=" | ">=";
 
 export interface BinaryExpr extends NodeBase {
   kind: "BinaryExpr";
@@ -147,9 +193,42 @@ export interface IndexExpr extends NodeBase {
   index: Expr;
 }
 
+// x.name — a field read, or (as a callee) a method call x.name(args).
+export interface MemberExpr extends NodeBase {
+  kind: "MemberExpr";
+  object: Expr;
+  name: string;
+}
+
+export interface SelfExpr extends NodeBase {
+  kind: "SelfExpr";
+}
+
+// super.name — only valid as a callee: super.name(args).
+export interface SuperExpr extends NodeBase {
+  kind: "SuperExpr";
+  name: string;
+}
+
+export interface NewExpr extends NodeBase {
+  kind: "NewExpr";
+  className: string;
+  args: Expr[];
+}
+
 export interface NumberLiteral extends NodeBase {
   kind: "NumberLiteral";
   value: bigint; // unbounded integers (§5.17)
+}
+
+export interface FloatLiteral extends NodeBase {
+  kind: "FloatLiteral";
+  value: number; // IEEE double (M1)
+}
+
+export interface NoneLiteral extends NodeBase {
+  kind: "NoneLiteral";
+  value: null;
 }
 
 export interface StringLiteral extends NodeBase {
@@ -167,9 +246,27 @@ export interface ArrayLiteral extends NodeBase {
   elements: Expr[];
 }
 
+// @(a, b) — immutable, fixed length (tuple).
+export interface ScaleLiteral extends NodeBase {
+  kind: "ScaleLiteral";
+  elements: Expr[];
+}
+
+// @{ k: v, … } — hash map.
+export interface DenLiteral extends NodeBase {
+  kind: "DenLiteral";
+  entries: { key: Expr; value: Expr }[];
+}
+
+// @[a, b] — hash set (duplicates collapse at run time).
+export interface ClutchLiteral extends NodeBase {
+  kind: "ClutchLiteral";
+  elements: Expr[];
+}
+
 export interface Identifier extends NodeBase {
   kind: "Identifier";
   name: string;
 }
 
-export type AstNode = Program | Decl | Param | Stmt | Expr;
+export type AstNode = Program | Decl | FieldDecl | AbstractMethod | Param | Stmt | Expr;
